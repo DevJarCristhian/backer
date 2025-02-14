@@ -1,0 +1,131 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  password String
+  status   Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  roleId Int
+  role   Role? @relation(fields: [roleId], references: [id])
+
+  whatsappId Int?
+  whatsapp   Whatsapps? @relation(fields: [whatsappId], references: [id])
+  Tickets    Tickets[]
+}
+
+model Role {
+  id          Int    @id @default(autoincrement())
+  description String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  users           Users[]
+  rolePermissions RolePermission[]
+}
+
+model Permissions {
+  id              Int              @id @default(autoincrement())
+  name            String
+  description     String
+  parent          Int?
+  createdAt       DateTime         @default(now())
+  parentRel       Permissions?     @relation("ParentChild", fields: [parent], references: [id])
+  children        Permissions[]    @relation("ParentChild")
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           Int @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+
+  role       Role        @relation(fields: [roleId], references: [id])
+  permission Permissions @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
+model Whatsapps {
+  id        Int      @id @default(autoincrement())
+  name      String
+  session   String?
+  qrcode    String?
+  status    String?
+  battery   String?
+  plugged   Boolean?
+  retries   Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  Users   Users[]
+  Tickets Tickets[]
+}
+
+model Contacts {
+  id            Int      @id @default(autoincrement())
+  name          String
+  number        String
+  profilePicUrl String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now())
+  email         String?
+
+  Tickets  Tickets[]
+  Messages Messages[]
+}
+
+model Tickets {
+  id             Int      @id @default(autoincrement())
+  status         String
+  lastMessage    String?
+  isGroup        Int?
+  unreadMessages Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
+
+  whatsappId Int
+  whatsapp   Whatsapps @relation(fields: [whatsappId], references: [id])
+
+  userId Int
+  user   Users @relation(fields: [userId], references: [id])
+
+  contactId Int
+  contact   Contacts @relation(fields: [contactId], references: [id])
+
+  queueId Int?
+  // Messages Messages[]
+}
+
+model Messages {
+  id        Int      @id @default(autoincrement())
+  body      String
+  ack       Int?
+  read      Int
+  mediaType String
+  mediaUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  fromMe   Int
+  isDelete Int?
+
+  // ticketId Int
+  // ticket   Tickets @relation(fields: [ticketId], references: [id])
+
+  contactId Int
+  contact   Contacts @relation(fields: [contactId], references: [id])
+}
