@@ -22,6 +22,7 @@ export class MessageService {
           select: {
             id: true,
             name: true,
+            number: true,
             profilePicUrl: true,
           },
         },
@@ -35,9 +36,11 @@ export class MessageService {
         acc[contactId] = {
           contactId: contactId,
           name: message.contact.name,
+          number: message.contact.number,
           profilePicUrl: message.contact.profilePicUrl,
           lastMessage: message.body,
           lastMessageDate: message.createdAt,
+          fromMe: message.fromMe,
           messages: [],
         };
       }
@@ -56,6 +59,7 @@ export class MessageService {
 
       acc[contactId].lastMessage = message.body;
       acc[contactId].lastMessageDate = message.createdAt;
+      acc[contactId].fromMe = message.fromMe;
 
       return acc;
     }, {});

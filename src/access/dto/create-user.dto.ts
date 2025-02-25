@@ -25,8 +25,7 @@ export class CreateUserDto {
   @IsNumber()
   roleId: number;
 
-  @IsNumber()
-  whatsappId: number;
+  whatsappId?: number;
 
   @IsBoolean()
   status: boolean;

@@ -6,9 +6,10 @@ import { WhatsappController } from './whatsapp.controller';
 import { ConnectionService } from './services/connection.service';
 import { ContactService } from './services/contact.service';
 import { MessageService } from './services/message.service';
+import { WSController } from './ws.controller';
 
 @Module({
-  controllers: [WhatsappController],
+  controllers: [WhatsappController, WSController],
   providers: [
     WhatsappGateway,
     WhatsappService,

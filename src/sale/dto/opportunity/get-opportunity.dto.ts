@@ -8,10 +8,11 @@ export class GetDTO {
   perPage?: string;
   page?: string;
 
-  gender?: number | null;
-  department?: number | null;
-  city?: number | null;
-  birthDate?: string | null;
+  emissionDate?: string | null;
+  patientId?: string | null;
+  productId?: string | null;
+  pharmacyId?: string | null;
+  userId?: string | null;
   startDate?: string | null;
   endDate?: string | null;
 }

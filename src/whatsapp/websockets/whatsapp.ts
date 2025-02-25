@@ -4,11 +4,11 @@ import { WhatsappGateway } from './socket.gateaway';
 import { ContactService } from '../services/contact.service';
 import { MessageService } from '../services/message.service';
 import { ConnectionService } from '../services/connection.service';
+import { StoreManyMessage, StoreMessage } from '../dto/message.dto';
 
 @Injectable()
 export class WhatsappService {
   private client: Client;
-  private qr: string;
 
   constructor(
     private readonly whatsappGateway: WhatsappGateway,
@@ -22,7 +22,6 @@ export class WhatsappService {
 
     this.client.on('qr', (qr: string) => {
       this.whatsappGateway.emitEvent('newQr', qr);
-      this.qr = qr;
     });
 
     this.client.on('ready', async () => {
@@ -38,7 +37,10 @@ export class WhatsappService {
     });
 
     this.client.on('message', async (message) => {
-      if (message.from != 'status@broadcast') {
+      if (
+        (message.from != 'status@broadcast' && message.type == 'chat') ||
+        message.type == 'image'
+      ) {
         const detailContact = await message.getContact();
         let contact = await this.contactService.getContactByNumber(
           detailContact.number,
@@ -64,19 +66,56 @@ export class WhatsappService {
         };
 
         const nMessage = await this.messageService.create(newMessage);
-
         this.whatsappGateway.emitEvent('MessageReceived', nMessage);
       }
     });
 
-    this.client.initialize();
+    // this.client.initialize();
   }
 
-  async sendMessage(to: string, message: string) {
-    const contact = await this.contactService.getContactByNumber(to);
-    if (!contact) {
-      throw new Error('Contact not found');
-    }
-    await this.client.sendMessage(to, message);
+  async sendMessage(data: StoreMessage, user: number): Promise<void> {
+    await this.client.sendMessage(`${data.number}@c.us`, data.message);
+    const newMessage = {
+      body: data.message,
+      ack: 0,
+      read: 0,
+      mediaType: data.mediaType,
+      fromMe: 1,
+      contactId: data.contactId,
+      // userId: user,
+    };
+    await this.messageService.create(newMessage);
+    // console.log(nMessage);
+  }
+
+  async sendManyMessage(data: StoreManyMessage, user: number): Promise<void> {
+    data.patients.forEach(async (patient) => {
+      setTimeout(async () => {
+        this.client.sendMessage(`${patient.number}@c.us`, data.message);
+
+        let contact = await this.contactService.getContactByNumber(
+          patient.number,
+        );
+
+        if (!contact) {
+          const newContact = {
+            name: patient.name,
+            number: patient.number,
+          };
+          contact = await this.contactService.create(newContact);
+        }
+
+        const newMessage = {
+          body: data.message,
+          ack: 0,
+          read: 0,
+          mediaType: 'chat',
+          fromMe: 1,
+          contactId: contact,
+        };
+
+        this.messageService.create(newMessage);
+      }, 250);
+    });
   }
 }

@@ -10,3 +10,22 @@ export class Message {
   isDelete?: number;
   contactId: number;
 }
+
+export interface StoreMessage {
+  contactId: number;
+  number: string;
+  message: string;
+  mediaType?: string;
+  mediaUrl?: string;
+  read?: string;
+}
+
+export interface StoreManyMessage {
+  message: string;
+  mediaUrl?: string;
+  patients: {
+    patientId: string;
+    number: string;
+    name: string;
+  }[];
+}

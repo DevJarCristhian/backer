@@ -9,8 +9,18 @@ export class DependentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(dto: GetDTO) {
-    const { search, perPage, page } = dto;
+    const {
+      search,
+      perPage,
+      page,
+      gender,
+      department,
+      birthDate,
+      startDate,
+      endDate,
+    } = dto;
 
+    let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
           AND (
@@ -21,6 +31,27 @@ export class DependentService {
           )
         `
       : Prisma.sql``;
+
+    if (gender) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.sexo = ${gender}`;
+    }
+
+    if (department) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.id_departamento = ${department}`;
+    }
+
+    if (birthDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha_nacimiento = ${birthDate}`;
+    }
+
+    if (startDate && endDate) {
+      const endDateTime = endDate + ' 23:59:59';
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha_inscripcion BETWEEN ${startDate} AND ${endDateTime}`;
+    }
+
+    if (startDate && !endDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha_inscripcion = ${startDate}`;
+    }
 
     const query = Prisma.sql`
       SELECT 
@@ -39,7 +70,7 @@ export class DependentService {
         dependientes AS d
       LEFT JOIN paises AS p ON d.pais = p.id
       LEFT JOIN departamentos AS dept ON d.id_departamento = dept.id
-      WHERE 1=1 ${searchQuery}
+      WHERE 1=1 ${searchQuery} ${filterQuery}
       ORDER BY d.id DESC
       LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
     `;
@@ -51,7 +82,7 @@ export class DependentService {
       FROM dependientes AS d
       LEFT JOIN paises AS p ON d.pais = p.id
       LEFT JOIN departamentos AS dept ON d.id_departamento = dept.id
-      WHERE 1=1 ${searchQuery}
+      WHERE 1=1 ${searchQuery} ${filterQuery}
     `;
 
     const totalResult = await this.prisma.$queryRaw(totalQuery);
@@ -75,7 +106,7 @@ export class DependentService {
         d.direccion AS address,
         d.correo_electronico AS email,
         d.celular AS phone,
-        COALESCE(d.fecha_nacimiento, '-') AS birthDate,
+        d.fecha_nacimiento AS birthDate,
         d.numero_documento AS documentNumber,
         d.fecha_inscripcion AS enrollmentDate
       FROM
@@ -88,13 +119,13 @@ export class DependentService {
   }
 
   async exportToExcel() {
-    const dependents = (await this.getAllDependents()) as any[];
+    const data = (await this.getAllDependents()) as any[];
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Dependientes');
+    const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [
-      { header: 'Nombre Completo', key: 'fullName', width: 40 },
+      { header: 'Nombre', key: 'fullName', width: 40 },
       { header: 'Direccion', key: 'address', width: 40 },
-      { header: 'Correo Electronico', key: 'email', width: 40 },
+      { header: 'Correo', key: 'email', width: 40 },
       { header: 'Sexo', key: 'gender', width: 15 },
       { header: 'Celular', key: 'phone', width: 20 },
       { header: 'Pais', key: 'countryName', width: 20 },
@@ -104,7 +135,7 @@ export class DependentService {
       { header: 'Fecha de Inscripcion', key: 'enrollmentDate', width: 20 },
     ];
 
-    dependents.forEach((v) => {
+    data.forEach((v) => {
       worksheet.addRow({
         fullName: v.fullName,
         address: v.address,

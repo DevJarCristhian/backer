@@ -15,6 +15,7 @@ export class UsersService {
         email: true,
         password: false,
         status: true,
+        whatsappId: true,
         createdAt: true,
         updatedAt: true,
         role: {
