@@ -6,6 +6,8 @@ import {
   Param,
   UseGuards,
   Put,
+  Res,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './services/users.service';
 import { RolesService } from './services/roles.service';
@@ -14,6 +16,8 @@ import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { ActiveUser } from '../common/decorators/active-user.decorator';
 import { UserActiveI } from 'src/common/interfaces/user-active.interface';
 import { CreateRoleDto } from './dto/create-role.dto';
+import { GetDTO } from './../common/dto/params-dto';
+import { Response } from 'express';
 
 @UseGuards(AuthGuard)
 @Controller('access')
@@ -24,8 +28,8 @@ export class AccessController {
   ) {}
 
   @Get('users')
-  findAllUsers() {
-    return this.usersService.findAll();
+  findAllUsers(@Query() dto: GetDTO) {
+    return this.usersService.findAll(dto);
   }
 
   @Post('users')
@@ -48,6 +52,19 @@ export class AccessController {
   @Get('users/roles')
   getRoles() {
     return this.rolesService.getRoles();
+  }
+
+  @Post('users/export')
+  async exportUser(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.usersService.exportToExcel(dto);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename="file.xlsx"');
+
+    return res.end(excelBuffer);
   }
 
   @Get('roles')

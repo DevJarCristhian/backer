@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '../auth/guard/auth.guard';
 import { GetDTO } from '../common/dto/params-dto';
 import { Response } from 'express';
@@ -21,8 +29,8 @@ export class DataController {
   }
 
   @Post('chain/export')
-  async exportDoctor(@Res() res: Response) {
-    const excelBuffer = await this.chainService.exportToExcel();
+  async exportDoctor(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.chainService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',
@@ -39,8 +47,8 @@ export class DataController {
   }
 
   @Post('institution/export')
-  async exportinstitution(@Res() res: Response) {
-    const excelBuffer = await this.institutionService.exportToExcel();
+  async exportinstitution(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.institutionService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',
@@ -57,8 +65,8 @@ export class DataController {
   }
 
   @Post('pharmacy/export')
-  async exportToExcel(@Res() res: Response) {
-    const excelBuffer = await this.pharmacyService.exportToExcel();
+  async exportToExcel(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.pharmacyService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',

@@ -54,7 +54,7 @@ export class DoctorService {
         LEFT JOIN departamentos AS dept ON d.id_departamento = dept.id
         LEFT JOIN municipio AS mun ON d.id_municipio = mun.id
         WHERE 1=1 ${searchQuery}  ${filterQuery}
-        ORDER BY d.id DESC
+        ORDER BY d.nombre ASC
         LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
       `;
 
@@ -85,7 +85,36 @@ export class DoctorService {
     };
   }
 
-  async getAllDoctors() {
+  async getAllDoctors(dto: GetDTO) {
+    const { search, department, city, startDate, endDate } = dto;
+
+    let filterQuery = Prisma.sql``;
+    const searchQuery = search
+      ? Prisma.sql`
+            AND (
+              d.nombre LIKE ${`%${search}%`} OR
+              mun.nombre LIKE ${`%${search}%`}
+            )
+          `
+      : Prisma.sql``;
+
+    if (department) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.id_departamento = ${department}`;
+    }
+
+    if (city) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.id_municipio = ${city}`;
+    }
+
+    if (startDate && endDate) {
+      const endDateTime = endDate + ' 23:59:59';
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha BETWEEN ${startDate} AND ${endDateTime}`;
+    }
+
+    if (startDate && !endDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha = ${startDate}`;
+    }
+
     const query = Prisma.sql`
         SELECT
           d.nombre AS name,
@@ -99,13 +128,17 @@ export class DoctorService {
         LEFT JOIN paises AS p ON d.id_pais = p.id
         LEFT JOIN departamentos AS dept ON d.id_departamento = dept.id
         LEFT JOIN municipio AS mun ON d.id_municipio = mun.id
+        WHERE 1=1 ${searchQuery}  ${filterQuery}
+        ORDER BY d.nombre ASC
     `;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllDoctors()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllDoctors(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [
@@ -114,12 +147,12 @@ export class DoctorService {
       { header: 'Departamento', key: 'departmentName', width: 40 },
       { header: 'Municipio', key: 'countryName', width: 40 },
       { header: 'Pais', key: 'city', width: 40 },
-      { header: 'Fecha', key: 'date', width: 20 },
+      { header: 'Fecha Creacion', key: 'date', width: 20 },
     ];
 
     data.forEach((v) => {
       worksheet.addRow({
-        nombre: v.nombre,
+        name: v.name,
         address: v.address,
         departmentName: v.departmentName,
         countryName: v.countryName,

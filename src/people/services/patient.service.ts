@@ -159,7 +159,42 @@ export class PatientService {
     };
   }
 
-  async getAllPatients() {
+  async getAllPatients(dto: GetDTO) {
+    const { search, gender, department, birthDate, startDate, endDate } = dto;
+
+    let filterQuery = Prisma.sql``;
+    const searchQuery = search
+      ? Prisma.sql`
+            AND (
+              p.nombre LIKE ${`%${search}%`} OR
+              p.apellido LIKE ${`%${search}%`} OR
+              p.numero_documento LIKE ${`%${search}%`} OR
+              dept.nombre LIKE ${`%${search}%`}
+            )
+          `
+      : Prisma.sql``;
+
+    if (gender) {
+      filterQuery = Prisma.sql`${filterQuery} AND p.sexo = ${gender}`;
+    }
+
+    if (department) {
+      filterQuery = Prisma.sql`${filterQuery} AND p.id_departamento = ${department}`;
+    }
+
+    if (birthDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND p.fecha_nacimiento = ${birthDate}`;
+    }
+
+    if (startDate && endDate) {
+      const endDateTime = endDate + ' 23:59:59';
+      filterQuery = Prisma.sql`${filterQuery} AND p.fecha_inscripcion BETWEEN ${startDate} AND ${endDateTime}`;
+    }
+
+    if (startDate && !endDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND p.fecha_inscripcion = ${startDate}`;
+    }
+
     const query = Prisma.sql`
       SELECT
         CONCAT(p.nombre, ' ', p.apellido) AS nombre_completo,
@@ -195,6 +230,7 @@ export class PatientService {
       LEFT JOIN departamentos AS dept ON p.id_departamento = dept.id
       LEFT JOIN doctores AS d ON p.id_medico = d.id
       LEFT JOIN instituciones AS i ON p.id_institucion = dept.id
+      WHERE 1=1 ${searchQuery} ${filterQuery}
     `;
 
     const serializedData = await this.prisma.$queryRaw(query);
@@ -207,8 +243,9 @@ export class PatientService {
     return data;
   }
 
-  async exportToExcel() {
-    const patients = (await this.getAllPatients()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const patients = (await this.getAllPatients(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Dependientes');
     worksheet.columns = [

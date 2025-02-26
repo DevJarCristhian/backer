@@ -52,7 +52,16 @@ export class VisitorService {
     };
   }
 
-  async getAllVisitors() {
+  async getAllVisitors(dto: GetDTO) {
+    const { search } = dto;
+    const searchQuery = search
+      ? Prisma.sql`
+            AND (
+              v.nombre LIKE ${`%${search}%`}
+            )
+          `
+      : Prisma.sql``;
+
     const query = Prisma.sql`
         SELECT
           p.nombre AS pais,
@@ -61,25 +70,27 @@ export class VisitorService {
         FROM
         visitadores AS v
         LEFT JOIN paises AS p ON v.id_pais = p.id
-    `;
+        WHERE 1=1 ${searchQuery}`;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllVisitors()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllVisitors(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [
-      { header: 'Nombre', key: 'pais', width: 40 },
-      { header: 'Pais', key: 'nombre', width: 40 },
+      { header: 'Nombre', key: 'nombre', width: 40 },
+      { header: 'Pais', key: 'pais', width: 40 },
       { header: 'Fecha de Inscripcion', key: 'fecha', width: 20 },
     ];
 
     data.forEach((v) => {
       worksheet.addRow({
-        pais: v.pais,
         nombre: v.nombre,
+        pais: v.pais,
         fecha: v.fecha,
       });
     });

@@ -40,8 +40,8 @@ export class PeopleController {
   }
 
   @Post('doctor/export')
-  async exportDoctor(@Res() res: Response) {
-    const excelBuffer = await this.doctorService.exportToExcel();
+  async exportDoctor(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.doctorService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',
@@ -58,8 +58,8 @@ export class PeopleController {
   }
 
   @Post('visitor/export')
-  async exportVisitor(@Res() res: Response) {
-    const excelBuffer = await this.visitorService.exportToExcel();
+  async exportVisitor(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.visitorService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',
@@ -76,8 +76,8 @@ export class PeopleController {
   }
 
   @Post('dependent/export')
-  async exportToExcel(@Res() res: Response) {
-    const excelBuffer = await this.dependentService.exportToExcel();
+  async exportToExcel(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.dependentService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',
@@ -104,8 +104,8 @@ export class PeopleController {
   }
 
   @Post('patient/export')
-  async exportPatient(@Res() res: Response) {
-    const excelBuffer = await this.patientService.exportToExcel();
+  async exportPatient(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.patientService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',

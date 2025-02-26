@@ -1,14 +1,19 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { PrismaService } from '../../prisma.service';
+import { Prisma } from '@prisma/client';
+import { GetDTO } from '../../common/dto/params-dto';
 import * as bcrypt from 'bcrypt';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return await this.prisma.users.findMany({
+  async findAll(dto: GetDTO) {
+    const { search } = dto;
+
+    const data = await this.prisma.users.findMany({
       select: {
         id: true,
         name: true,
@@ -25,7 +30,25 @@ export class UsersService {
           },
         },
       },
+      where: search
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                },
+              },
+              {
+                email: {
+                  contains: search,
+                },
+              },
+            ],
+          }
+        : {},
     });
+
+    return data;
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -107,5 +130,67 @@ export class UsersService {
 
   findOne(id: number) {
     return this.prisma.users.findUnique({ where: { id: id } });
+  }
+
+  async getAllUsers(dto: GetDTO) {
+    const { search } = dto;
+
+    const data = await this.prisma.users.findMany({
+      select: {
+        name: true,
+        email: true,
+        password: false,
+        status: true,
+        whatsappId: false,
+        createdAt: true,
+        updatedAt: true,
+      },
+      where: search
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                },
+              },
+              {
+                email: {
+                  contains: search,
+                },
+              },
+            ],
+          }
+        : {},
+    });
+
+    return data;
+  }
+
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllUsers(dto)) as any[];
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Lista');
+    worksheet.columns = [
+      { header: 'Nombre', key: 'name', width: 40 },
+      { header: 'Email', key: 'email', width: 40 },
+      { header: 'Estado', key: 'status', width: 40 },
+      { header: 'Creado', key: 'createdAt', width: 40 },
+      { header: 'Actualizado', key: 'updatedAt', width: 40 },
+    ];
+
+    data.forEach((v) => {
+      worksheet.addRow({
+        name: v.name,
+        email: v.email,
+        status: v.status,
+        createdAt: v.createdAt,
+        updatedAt: v.updatedAt,
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
   }
 }

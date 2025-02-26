@@ -56,7 +56,15 @@ export class InstitutionService {
     };
   }
 
-  async getAllInstitutions() {
+  async getAllInstitutions(dto: GetDTO) {
+    const { search } = dto;
+    const searchQuery = search
+      ? Prisma.sql`
+        AND (
+          nombre LIKE ${`%${search}%`}
+        )`
+      : Prisma.sql``;
+
     const query = Prisma.sql`
           SELECT
             nombre,
@@ -64,26 +72,28 @@ export class InstitutionService {
             fecha
           FROM
           instituciones
-          ORDER BY nombre ASC
-      `;
+          WHERE 1=1 ${searchQuery}
+          ORDER BY nombre ASC`;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllInstitutions()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllInstitutions(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [
       { header: 'Nombre', key: 'nombre', width: 40 },
-      { header: 'Direccion', key: 'Direccion', width: 40 },
+      { header: 'Direccion', key: 'direccion', width: 40 },
       { header: 'Fecha de Creacion', key: 'fecha', width: 40 },
     ];
 
     data.forEach((v) => {
       worksheet.addRow({
         nombre: v.nombre,
-        Direccion: v.Direccion,
+        direccion: v.direccion,
         fecha: v.fecha,
       });
     });

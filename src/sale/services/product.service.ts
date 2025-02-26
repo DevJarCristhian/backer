@@ -69,7 +69,18 @@ export class ProductService {
     };
   }
 
-  async getAllProducts() {
+  async getAllProducts(dto: GetDTO) {
+    const { search } = dto;
+    const searchQuery = search
+      ? Prisma.sql`
+            AND (
+              nombre LIKE ${`%${search}%`} OR
+              descripcion LIKE ${`%${search}%`} OR
+              descripcion_larga LIKE ${`%${search}%`}
+            )
+          `
+      : Prisma.sql``;
+
     const query = Prisma.sql`
         SELECT
           nombre,
@@ -86,13 +97,15 @@ export class ProductService {
           nicaragua,
           costarica
         FROM productos
-    `;
+        WHERE 1=1 ${searchQuery}
+        ORDER BY nombre ASC`;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllProducts()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllProducts(dto)) as any[];
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [

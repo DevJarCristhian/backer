@@ -38,8 +38,8 @@ export class SaleController {
   }
 
   @Post('product/export')
-  async exportDoctor(@Res() res: Response) {
-    const excelBuffer = await this.productService.exportToExcel();
+  async exportDoctor(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.productService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',
@@ -66,8 +66,8 @@ export class SaleController {
   }
 
   @Post('opportunity/export')
-  async exportVisitor(@Res() res: Response) {
-    const excelBuffer = await this.opportunityService.exportToExcel();
+  async exportVisitor(@Body() dto: GetDTO, @Res() res: Response) {
+    const excelBuffer = await this.opportunityService.exportToExcel(dto);
 
     res.setHeader(
       'Content-Type',

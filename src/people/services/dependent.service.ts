@@ -96,7 +96,42 @@ export class DependentService {
     };
   }
 
-  async getAllDependents() {
+  async getAllDependents(dto: GetDTO) {
+    const { search, gender, department, birthDate, startDate, endDate } = dto;
+
+    let filterQuery = Prisma.sql``;
+    const searchQuery = search
+      ? Prisma.sql`
+          AND (
+            d.nombre LIKE ${`%${search}%`} OR 
+            d.apellido LIKE ${`%${search}%`} OR 
+            d.numero_documento LIKE ${`%${search}%`} OR
+            dept.nombre LIKE ${`%${search}%`}
+          )
+        `
+      : Prisma.sql``;
+
+    if (gender) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.sexo = ${gender}`;
+    }
+
+    if (department) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.id_departamento = ${department}`;
+    }
+
+    if (birthDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha_nacimiento = ${birthDate}`;
+    }
+
+    if (startDate && endDate) {
+      const endDateTime = endDate + ' 23:59:59';
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha_inscripcion BETWEEN ${startDate} AND ${endDateTime}`;
+    }
+
+    if (startDate && !endDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.fecha_inscripcion = ${startDate}`;
+    }
+
     const query = Prisma.sql`
       SELECT
         dept.nombre AS departmentName,
@@ -113,13 +148,16 @@ export class DependentService {
         dependientes AS d
       LEFT JOIN paises AS p ON d.pais = p.id
       LEFT JOIN departamentos AS dept ON d.id_departamento = dept.id
+      WHERE 1=1 ${searchQuery} ${filterQuery}
+
     `;
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllDependents()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllDependents(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [

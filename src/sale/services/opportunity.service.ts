@@ -162,7 +162,62 @@ export class OpportunityService {
     };
   }
 
-  async getAllOpportunities() {
+  async getAllOpportunities(dto: GetDTO) {
+    const {
+      search,
+      emissionDate,
+      patientId,
+      productId,
+      pharmacyId,
+      userId,
+      startDate,
+      endDate,
+    } = dto;
+
+    let filterQuery = Prisma.sql``;
+    const searchQuery = search
+      ? Prisma.sql`
+          AND (
+            o.serie_factura LIKE ${`%${search}%`} OR 
+            o.no_factura LIKE ${`%${search}%`} OR 
+            o.fecha_facturacion LIKE ${`%${search}%`} OR
+            pa.numero_documento LIKE ${`%${search}%`} OR
+            pa.nombre LIKE ${`%${search}%`} OR
+            pa.apellido LIKE ${`%${search}%`} OR
+            pa.descripcion LIKE ${`%${search}%`}
+          )
+        `
+      : Prisma.sql``;
+
+    if (patientId) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.id_paciente = ${patientId}`;
+    }
+
+    if (productId) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.id_producto = ${productId}`;
+    }
+
+    if (pharmacyId) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.id_farmacia = ${pharmacyId}`;
+    }
+
+    if (userId) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.usuario_modifica = ${userId}`;
+    }
+
+    if (emissionDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion = ${emissionDate}`;
+    }
+
+    if (startDate && endDate) {
+      const endDateTime = endDate + ' 23:59:59';
+      filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion BETWEEN ${startDate} AND ${endDateTime}`;
+    }
+
+    if (startDate && !endDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion = ${startDate}`;
+    }
+
     const query = Prisma.sql`
       SELECT
         o.serie_factura,
@@ -194,7 +249,8 @@ export class OpportunityService {
         LEFT JOIN pacientes AS pa ON o.id_paciente = pa.id
         LEFT JOIN farmacias AS fa ON o.id_farmacia = fa.id
         LEFT JOIN productos AS pro ON o.id_producto = pro.id
-    `;
+      WHERE 1=1 ${searchQuery} ${filterQuery}`;
+
     const serializedData = await this.prisma.$queryRaw(query);
 
     const data = JSON.parse(
@@ -210,8 +266,9 @@ export class OpportunityService {
     // -- o.usuario_modifica
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllOpportunities()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllOpportunities(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [

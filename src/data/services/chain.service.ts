@@ -9,7 +9,7 @@ export class ChainService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(dto: GetDTO) {
-    const { search, perPage, page } = dto;
+    const { search } = dto;
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -37,12 +37,26 @@ export class ChainService {
       ),
     );
 
+    const total = data.length;
+    const last_page = Math.ceil(total / 50);
+
     return {
       data,
+      total,
+      last_page,
     };
   }
 
-  async getAllChains() {
+  async getAllChains(dto: GetDTO) {
+    const { search } = dto;
+    const searchQuery = search
+      ? Prisma.sql`
+            AND (
+              c.cadena LIKE ${`%${search}%`}
+            )
+          `
+      : Prisma.sql``;
+
     const query = Prisma.sql`
         SELECT
           c.cadena,
@@ -50,14 +64,16 @@ export class ChainService {
         FROM
         cadena AS c
         LEFT JOIN paises AS p ON c.id_pais = p.id
-        ORDER BY c.cadena ASC
-    `;
+        WHERE 1=1 ${searchQuery}
+        ORDER BY c.cadena ASC`;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllChains()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllChains(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [

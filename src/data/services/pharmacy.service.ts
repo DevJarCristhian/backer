@@ -53,7 +53,7 @@ export class PharmacyService {
       LEFT JOIN cadena AS ca ON f.id_cadena = ca.id
       LEFT JOIN departamentos AS dept ON f.id_departamento = dept.id
       WHERE 1=1 ${searchQuery}
-    `;
+      ORDER BY f.sucursal ASC`;
 
     const totalResult = await this.prisma.$queryRaw(totalQuery);
     const total = Number(totalResult[0].total);
@@ -66,7 +66,19 @@ export class PharmacyService {
     };
   }
 
-  async getAllPharmacys() {
+  async getAllPharmacys(dto: GetDTO) {
+    const { search } = dto;
+
+    const searchQuery = search
+      ? Prisma.sql`
+          AND (
+            f.sucursal LIKE ${`%${search}%`} OR 
+            f.telefono LIKE ${`%${search}%`} OR
+            ca.cadena LIKE ${`%${search}%`}
+          )
+        `
+      : Prisma.sql``;
+
     const query = Prisma.sql`
       SELECT 
         f.sucursal,
@@ -78,14 +90,16 @@ export class PharmacyService {
       FROM farmacias AS f
       LEFT JOIN cadena AS ca ON f.id_cadena = ca.id
       LEFT JOIN departamentos AS dept ON f.id_departamento = dept.id
-      ORDER BY f.sucursal ASC
-    `;
+      WHERE 1=1 ${searchQuery}
+      ORDER BY f.sucursal ASC`;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllPharmacys()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllPharmacys(dto)) as any[];
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [
