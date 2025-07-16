@@ -7,8 +7,17 @@ import { ConnectionService } from './services/connection.service';
 import { ContactService } from './services/contact.service';
 import { MessageService } from './services/message.service';
 import { WSController } from './ws.controller';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Module({
+  imports: [
+    MulterModule.register({
+      storage: diskStorage({
+        destination: './uploads',
+      }),
+    }),
+  ],
   controllers: [WhatsappController, WSController],
   providers: [
     WhatsappGateway,

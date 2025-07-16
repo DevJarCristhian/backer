@@ -6,9 +6,15 @@ import { PeopleModule } from './people/people.module';
 import { DataModule } from './data/data.module';
 import { SaleModule } from './sale/sale.module';
 import { SettingModule } from './setting/setting.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { ScheduleModule } from '@nestjs/schedule';
+import { join } from 'path';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
+    CalendarModule,
     PeopleModule,
     WhatsappModule,
     AccessModule,
@@ -16,6 +22,12 @@ import { SettingModule } from './setting/setting.module';
     DataModule,
     SaleModule,
     SettingModule,
+    TaskModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'public'),
+      serveRoot: '/public',
+    }),
+    ScheduleModule.forRoot(),
   ],
   controllers: [],
   providers: [],

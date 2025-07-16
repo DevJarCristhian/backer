@@ -13,31 +13,43 @@ export class PricesService {
     const searchQuery = search
       ? Prisma.sql`
             AND (
-              v.nombre LIKE ${`%${search}%`}
+              c.cadena LIKE ${`%${search}%`} OR
+              pro.nombre LIKE ${`%${search}%`}
             )
           `
       : Prisma.sql``;
 
     const query = Prisma.sql`
-        SELECT
-          v.id,
-          p.nombre AS countryName,
-          v.nombre AS name,
-          v.fecha AS date,
-          v.updated_at AS updatedAt
-        FROM
-        visitadores AS v
-        LEFT JOIN paises AS p ON v.id_pais = p.id 
-        WHERE 1=1 ${searchQuery}
-        ORDER BY v.id DESC
-        LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
-      `;
+      SELECT
+        lp.id,
+        p.nombre AS countryName,
+        pro.nombre AS productName,
+        c.cadena AS chainName,
+        lp.id_moneda AS currencyId,
+        lp.precio AS price,
+        lp.estado AS status
+      FROM 
+        lista_precios AS lp
+      LEFT JOIN paises AS p ON lp.id_pais = p.id
+      LEFT JOIN productos AS pro ON lp.id_producto = pro.id
+      LEFT JOIN cadena AS c ON lp.id_cadena = c.id
+      WHERE 1=1 ${searchQuery}
+      ORDER BY pro.nombre ASC
+      LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
+    `;
 
-    const data = await this.prisma.$queryRaw(query);
+    const serializedData = await this.prisma.$queryRaw(query);
+    const data = JSON.parse(
+      JSON.stringify(serializedData, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+      ),
+    );
 
-    const totalQuery = Prisma.sql`SELECT COUNT(*) AS total
-    FROM visitadores AS v
-    LEFT JOIN paises AS p ON v.id_pais = p.id
+    const totalQuery = Prisma.sql`SELECT COUNT(*) AS total 
+    FROM lista_precios AS lp
+    LEFT JOIN paises AS p ON lp.id_pais = p.id
+    LEFT JOIN productos AS pro ON lp.id_producto = pro.id
+    LEFT JOIN cadena AS c ON lp.id_cadena = c.id
     WHERE 1=1 ${searchQuery}`;
 
     const totalResult = await this.prisma.$queryRaw(totalQuery);
@@ -52,35 +64,55 @@ export class PricesService {
     };
   }
 
-  async getAllPricess() {
+  async getAllPricess(dto: GetDTO) {
+    const { search } = dto;
+    const searchQuery = search
+      ? Prisma.sql`
+            AND (
+              c.cadena LIKE ${`%${search}%`} OR
+              pro.nombre LIKE ${`%${search}%`}
+            )
+          `
+      : Prisma.sql``;
+
     const query = Prisma.sql`
         SELECT
-          p.nombre AS pais,
-          v.nombre,
-          v.fecha
+          pro.nombre AS productName,
+          c.cadena AS chainName,
+          p.nombre AS countryName,
+          lp.precio AS price,
+          lp.id_moneda AS currencyId,
+          lp.estado AS status
         FROM
-        visitadores AS v
-        LEFT JOIN paises AS p ON v.id_pais = p.id
-    `;
+        lista_precios AS lp
+        LEFT JOIN paises AS p ON lp.id_pais = p.id
+        LEFT JOIN productos AS pro ON lp.id_producto = pro.id
+        LEFT JOIN cadena AS c ON lp.id_cadena = c.id
+        WHERE 1=1 ${searchQuery}
+        ORDER BY pro.nombre ASC
+      `;
+
     const data = await this.prisma.$queryRaw(query);
     return data;
   }
 
-  async exportToExcel() {
-    const data = (await this.getAllPricess()) as any[];
+  async exportToExcel(dto: GetDTO) {
+    const data = (await this.getAllPricess(dto)) as any[];
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Lista');
     worksheet.columns = [
-      { header: 'Nombre', key: 'pais', width: 40 },
-      { header: 'Pais', key: 'nombre', width: 40 },
-      { header: 'Fecha de Inscripcion', key: 'fecha', width: 20 },
+      { header: 'Producto', key: 'productName', width: 40 },
+      { header: 'Cadena', key: 'chainName', width: 40 },
+      { header: 'Pais', key: 'countryName', width: 40 },
+      { header: 'Precio', key: 'price', width: 40 },
     ];
 
     data.forEach((v) => {
       worksheet.addRow({
-        pais: v.pais,
-        nombre: v.nombre,
-        fecha: v.fecha,
+        productName: v.productName,
+        chainName: v.chainName,
+        countryName: v.countryName,
+        price: v.price,
       });
     });
 

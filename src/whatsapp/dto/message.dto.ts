@@ -21,8 +21,7 @@ export interface StoreMessage {
 }
 
 export interface StoreManyMessage {
-  message: string;
-  mediaUrl?: string;
+  templateId: string;
   patients: {
     patientId: string;
     number: string;

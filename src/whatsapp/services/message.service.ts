@@ -37,6 +37,7 @@ export class MessageService {
           contactId: contactId,
           name: message.contact.name,
           number: message.contact.number,
+          mediaType: message.mediaType,
           profilePicUrl: message.contact.profilePicUrl,
           lastMessage: message.body,
           lastMessageDate: message.createdAt,
@@ -57,6 +58,7 @@ export class MessageService {
         createdAt: message.createdAt,
       });
 
+      acc[contactId].mediaType = message.mediaType;
       acc[contactId].lastMessage = message.body;
       acc[contactId].lastMessageDate = message.createdAt;
       acc[contactId].fromMe = message.fromMe;
@@ -102,11 +104,17 @@ export class MessageService {
     return newMessage;
   }
 
-  // async update(id: number, data: Whatsapp) {
-  //   await this.prisma.whatsapps.update({
-  //     where: { id },
-  //     data,
-  //   });
-  //   return 'Whatsapp actualizado exitosamente';
-  // }
+  async getTemplatebyId(id: number) {
+    const message = await this.prisma.templates.findFirst({
+      select: {
+        message: true,
+        contentType: true,
+        file: true,
+      },
+      where: {
+        id,
+      },
+    });
+    return message;
+  }
 }
