@@ -49,8 +49,12 @@ export class WSController {
     if (file) {
       fileUrl = `${process.env.BASE_URL}/public/messages/${file.filename}`;
     }
-    await this.wsService.sendMessage(body, +user.id, fileUrl);
-    return 'Message sent successfully';
+    const response = await this.wsService.sendWSMessage(
+      body,
+      +user.id,
+      fileUrl,
+    );
+    return response;
   }
 
   @Post('send-many-message')
@@ -60,9 +64,9 @@ export class WSController {
   ) {
     try {
       await this.wsService.sendManyMessage(body, +user.id);
-      return { status: 200, message: 'Message sent successfully' };
+      return { status: 200, message: 'Success' };
     } catch (error) {
-      return { status: 400, message: 'Error sending message' };
+      return { status: 400, message: 'Error' };
     }
   }
 }

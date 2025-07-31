@@ -48,7 +48,7 @@ export class CalendarService {
       },
     });
 
-    const estados = ['Pendiente', 'Enviado', 'No enviado'];
+    const estados = ['Pendiente', 'Enviado', 'No Enviado'];
     const totalsW = await Promise.all(
       estados.map((estado) =>
         this.prisma.historySending
@@ -63,9 +63,7 @@ export class CalendarService {
 
     const sending = totalsW.find((group) => group.estado === 'Enviado').data;
     const pending = totalsW.find((group) => group.estado === 'Pendiente').data;
-    const notSending = totalsW.find(
-      (group) => group.estado === 'No enviado',
-    ).data;
+    const notSend = totalsW.find((group) => group.estado === 'No Enviado').data;
 
     const data = query.map((row) => ({
       id: row.id,
@@ -84,19 +82,19 @@ export class CalendarService {
         template: row.template?.name ?? null,
         totalPatients: row._count.HistorySending ?? 0,
         totalSending:
-          sending.length > 0 && row.templateId
-            ? sending.find((item) => item.calendarId === row.id)._count
-                .calendarId
+          sending.length > 0 && row.category === 'Programación'
+            ? (sending.find((item) => item.calendarId === row.id)?._count
+                .calendarId ?? 0)
             : 0,
         totalPending:
-          pending.length > 0 && row.templateId
-            ? pending.find((item) => item.calendarId === row.id)._count
-                .calendarId
+          pending.length > 0 && row.category === 'Programación'
+            ? (pending.find((item) => item.calendarId === row.id)?._count
+                .calendarId ?? 0)
             : 0,
         totalNot:
-          notSending.length > 0 && row.templateId
-            ? notSending.find((item) => item.calendarId === row.id)._count
-                .calendarId
+          notSend.length > 0 && row.category === 'Programación'
+            ? (notSend.find((item) => item.calendarId === row.id)?._count
+                .calendarId ?? 0)
             : 0,
         istart: dayjs.utc(row.startDate).format('YYYY-MM-DD'),
         iend: dayjs.utc(row.endDate).format('YYYY-MM-DD'),

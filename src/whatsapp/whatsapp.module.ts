@@ -9,6 +9,7 @@ import { MessageService } from './services/message.service';
 import { WSController } from './ws.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { TaskWhatsappService } from './taskWhatsapp.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { diskStorage } from 'multer';
     ConnectionService,
     ContactService,
     MessageService,
+    TaskWhatsappService,
   ],
 })
 export class WhatsappModule {}

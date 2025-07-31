@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { GetDTO } from '../common/dto/params-dto';
-import { Prisma } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WhatsappGateway } from '../whatsapp/websockets/socket.gateaway';
-
 const dayjs = require('dayjs');
 
 @Injectable()
@@ -14,13 +11,6 @@ export class TaskService {
     private readonly whatsappGateway: WhatsappGateway,
   ) {}
   private readonly logger = new Logger(TaskService.name);
-
-  @Cron(CronExpression.EVERY_10_SECONDS)
-  handleCron() {
-    const date = dayjs().format('YYYY-MM-DD HH:mm');
-    this.whatsappGateway.emitEvent('calendarJob', 'Task running at ' + date);
-    this.logger.debug('Task running at ' + date);
-  }
 
   @Cron(CronExpression.EVERY_MINUTE)
   InProgressTask() {
@@ -79,39 +69,7 @@ export class TaskService {
         userId: calendar.userId,
       },
     });
-  }
 
-  async executeTaskCalendar(date: string, hour: string) {
-    const calendar = await this.prisma.calendar.findFirst({
-      where: {
-        status: {
-          not: 'En Proceso',
-        },
-        deleted: false,
-      },
-      select: {
-        id: true,
-        status: true,
-        template: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    const patients = await this.prisma.historySending.findMany({
-      where: {
-        calendarId: calendar.id,
-      },
-      select: {
-        id: true,
-        namePatient: true,
-        phone: true,
-        patientId: true,
-        status: true,
-      },
-    });
+    this.whatsappGateway.emitEvent('Notify', 'notify');
   }
 }

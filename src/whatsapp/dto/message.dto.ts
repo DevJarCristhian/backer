@@ -28,3 +28,10 @@ export interface StoreManyMessage {
     name: string;
   }[];
 }
+
+export interface sendMessageTask {
+  number: string;
+  message: string;
+  mediaType: string;
+  contactId: number;
+}
