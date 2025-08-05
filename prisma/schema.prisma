@@ -8,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
+model users {
   id       Int     @id @default(autoincrement())
   name     String
   email    String  @unique
@@ -19,50 +19,50 @@ model Users {
   updatedAt DateTime @default(now())
 
   roleId Int
-  role   Role? @relation(fields: [roleId], references: [id])
+  role   role? @relation(fields: [roleId], references: [id])
 
   whatsappId Int?
-  whatsapp   Whatsapps?  @relation(fields: [whatsappId], references: [id])
-  Tickets    Tickets[]
-  Templates  Templates[]
-  Calendar   Calendar[]
-  Notify     Notify[]
+  whatsapp   whatsapps?  @relation(fields: [whatsappId], references: [id])
+  tickets    tickets[]
+  templates  templates[]
+  calendar   calendar[]
+  notify     notify[]
 }
 
-model Role {
+model role {
   id          Int    @id @default(autoincrement())
   description String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
-  users           Users[]
-  rolePermissions RolePermission[]
+  users           users[]
+  rolePermissions rolePermission[]
 }
 
-model Permissions {
+model permissions {
   id              Int              @id @default(autoincrement())
   name            String
   description     String
   parent          Int?
   createdAt       DateTime         @default(now())
-  parentRel       Permissions?     @relation("ParentChild", fields: [parent], references: [id])
-  children        Permissions[]    @relation("ParentChild")
-  rolePermissions RolePermission[]
+  parentRel       permissions?     @relation("ParentChild", fields: [parent], references: [id])
+  children        permissions[]    @relation("ParentChild")
+  rolePermissions rolePermission[]
 }
 
-model RolePermission {
+model rolePermission {
   id           Int @id @default(autoincrement())
   roleId       Int
   permissionId Int
 
-  role       Role        @relation(fields: [roleId], references: [id])
-  permission Permissions @relation(fields: [permissionId], references: [id])
+  role       role        @relation(fields: [roleId], references: [id])
+  permission permissions @relation(fields: [permissionId], references: [id])
 
   @@unique([roleId, permissionId])
 }
 
-model Whatsapps {
+model whatsapps {
   id        Int      @id @default(autoincrement())
   name      String
   session   String?  @db.Text
@@ -74,11 +74,11 @@ model Whatsapps {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
-  Users   Users[]
-  Tickets Tickets[]
+  users   users[]
+  tickets tickets[]
 }
 
-model Contacts {
+model contacts {
   id            Int      @id @default(autoincrement())
   name          String
   number        String
@@ -88,11 +88,11 @@ model Contacts {
   email         String?
   patientId     Int?
 
-  Tickets  Tickets[]
-  Messages Messages[]
+  tickets  tickets[]
+  messages messages[]
 }
 
-model Tickets {
+model tickets {
   id             Int      @id @default(autoincrement())
   status         String
   lastMessage    String?  @db.Text
@@ -102,19 +102,19 @@ model Tickets {
   updatedAt      DateTime @default(now())
 
   whatsappId Int
-  whatsapp   Whatsapps @relation(fields: [whatsappId], references: [id])
+  whatsapp   whatsapps @relation(fields: [whatsappId], references: [id])
 
   userId Int
-  user   Users @relation(fields: [userId], references: [id])
+  user   users @relation(fields: [userId], references: [id])
 
   contactId Int
-  contact   Contacts @relation(fields: [contactId], references: [id])
+  contact   contacts @relation(fields: [contactId], references: [id])
 
   queueId Int?
   // Messages Messages[]
 }
 
-model Messages {
+model messages {
   id        Int      @id @default(autoincrement())
   body      String   @db.Text
   ack       Int?
@@ -131,10 +131,10 @@ model Messages {
   // ticket   Tickets @relation(fields: [ticketId], references: [id])
 
   contactId Int
-  contact   Contacts @relation(fields: [contactId], references: [id])
+  contact   contacts @relation(fields: [contactId], references: [id])
 }
 
-model Templates {
+model templates {
   id          Int        @id @default(autoincrement())
   name        String     @db.Text
   message     String     @db.Text
@@ -144,11 +144,11 @@ model Templates {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now())
   userId      Int
-  user        Users      @relation(fields: [userId], references: [id])
-  Calendar    Calendar[]
+  user        users      @relation(fields: [userId], references: [id])
+  calendar    calendar[]
 }
 
-model Calendar {
+model calendar {
   id          Int      @id @default(autoincrement())
   title       String
   description String
@@ -163,14 +163,14 @@ model Calendar {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @default(now())
   userId         Int
-  user           Users            @relation(fields: [userId], references: [id])
-  HistorySending HistorySending[]
+  user           users            @relation(fields: [userId], references: [id])
+  historySending historySending[]
 
   templateId Int?
-  template   Templates? @relation(fields: [templateId], references: [id])
+  template   templates? @relation(fields: [templateId], references: [id])
 }
 
-model HistorySending {
+model historySending {
   id          Int      @id @default(autoincrement())
   namePatient String
   patientId   String
@@ -179,16 +179,16 @@ model HistorySending {
   createdAt   DateTime @default(now())
 
   calendarId Int
-  calendar   Calendar @relation(fields: [calendarId], references: [id])
+  calendar   calendar @relation(fields: [calendarId], references: [id])
 }
 
-model Notify {
+model notify {
   id        Int      @id @default(autoincrement())
   title     String
   message   String
   status    String
   type      String
   userId    Int
-  user      Users    @relation(fields: [userId], references: [id])
+  user      users    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }

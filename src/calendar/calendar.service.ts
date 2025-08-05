@@ -8,7 +8,7 @@ const dayjs = require('dayjs');
 
 @Injectable()
 export class CalendarService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll() {
     const query = await this.prisma.calendar.findMany({
@@ -31,7 +31,7 @@ export class CalendarService {
         },
         _count: {
           select: {
-            HistorySending: true,
+            historySending: true,
           },
         },
         template: {
@@ -80,21 +80,21 @@ export class CalendarService {
         createdDate: dayjs(row.createdAt).format('DD/MM/YYYY HH:mm'),
         templateId: row.templateId,
         template: row.template?.name ?? null,
-        totalPatients: row._count.HistorySending ?? 0,
+        totalPatients: row._count.historySending ?? 0,
         totalSending:
           sending.length > 0 && row.category === 'Programación'
             ? (sending.find((item) => item.calendarId === row.id)?._count
-                .calendarId ?? 0)
+              .calendarId ?? 0)
             : 0,
         totalPending:
           pending.length > 0 && row.category === 'Programación'
             ? (pending.find((item) => item.calendarId === row.id)?._count
-                .calendarId ?? 0)
+              .calendarId ?? 0)
             : 0,
         totalNot:
           notSend.length > 0 && row.category === 'Programación'
             ? (notSend.find((item) => item.calendarId === row.id)?._count
-                .calendarId ?? 0)
+              .calendarId ?? 0)
             : 0,
         istart: dayjs.utc(row.startDate).format('YYYY-MM-DD'),
         iend: dayjs.utc(row.endDate).format('YYYY-MM-DD'),

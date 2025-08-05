@@ -9,7 +9,7 @@ export class TaskService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsappGateway: WhatsappGateway,
-  ) {}
+  ) { }
   private readonly logger = new Logger(TaskService.name);
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -36,7 +36,7 @@ export class TaskService {
         userId: true,
         _count: {
           select: {
-            HistorySending: true,
+            historySending: true,
           },
         },
         template: {
@@ -62,7 +62,7 @@ export class TaskService {
 
     await this.prisma.notify.create({
       data: {
-        title: `Envio de Mensajes a ${calendar._count.HistorySending} pacientes`,
+        title: `Envio de Mensajes a ${calendar._count.historySending} pacientes`,
         message: `Se ha iniciado el envio de mensajes a las ${hour} del ${date} con la plantilla ${calendar.template.name}`,
         status: 'En Proceso',
         type: 'Mensajes Programados',
