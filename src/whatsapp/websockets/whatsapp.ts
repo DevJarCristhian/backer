@@ -49,16 +49,10 @@ export class WhatsappService {
     });
 
     this.client.on('ready', async () => {
-      let data = {
-        session: 'asd2342342347263482342',
-        qrcode: 'asdase34234234234234235',
-        status: 'Conectado',
-      };
-
-      await this.connectionService.updateWhatsapp(1, data);
+      await this.connectionService.updateStatusWhatsapp(1, 'Conectado');
 
       this.whatsappGateway.emitEvent('ready', 'WhatsApp is ready!');
-      console.log('WhatsApp is ready!');
+      this.logger.log('WhatsApp is ready!');
     });
 
     this.client.on('message', async (message) => {
@@ -114,6 +108,7 @@ export class WhatsappService {
 
       try {
         await this.client.destroy();
+        await this.connectionService.updateStatusWhatsapp(1, 'Desconectado');
         this.logger.log('🧹 Cliente destruido, esperando reinicio...');
 
         setTimeout(() => {

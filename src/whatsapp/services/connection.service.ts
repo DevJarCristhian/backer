@@ -8,10 +8,21 @@ import { diskStorage, StorageEngine } from 'multer';
 
 @Injectable()
 export class ConnectionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getWhatsapps() {
     return this.prisma.whatsapps.findMany();
+  }
+
+  async whastappActive(id: number) {
+    const response = await this.prisma.whatsapps.findUnique({
+      select: {
+        status: true,
+      },
+      where: { id },
+    });
+
+    return response.status;
   }
 
   async createWhatsapp(data: Whatsapp) {
@@ -56,19 +67,19 @@ export class ConnectionService {
       },
       where: search
         ? {
-            OR: [
-              {
-                name: {
-                  contains: search,
-                },
+          OR: [
+            {
+              name: {
+                contains: search,
               },
-              {
-                message: {
-                  contains: search,
-                },
+            },
+            {
+              message: {
+                contains: search,
               },
-            ],
-          }
+            },
+          ],
+        }
         : {},
     });
 
@@ -124,10 +135,10 @@ export class ConnectionService {
       },
       where: search
         ? {
-            type: {
-              equals: parseInt(search),
-            },
-          }
+          type: {
+            equals: parseInt(search),
+          },
+        }
         : {},
     });
 

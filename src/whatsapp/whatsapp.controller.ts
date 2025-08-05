@@ -30,11 +30,17 @@ export class WhatsappController {
     private readonly connectionService: ConnectionService,
     private readonly messageService: MessageService,
     private readonly contactService: ContactService,
-  ) {}
+  ) { }
 
   @Get()
   async getWhatsapps() {
     return this.connectionService.getWhatsapps();
+  }
+
+
+  @Get('/active')
+  async whatsappActive() {
+    return this.connectionService.whastappActive(1);
   }
 
   @Post()
@@ -50,9 +56,17 @@ export class WhatsappController {
     return this.connectionService.updateWhatsapp(+id, data);
   }
 
+
   @Get('messages')
-  async getMessages() {
-    return this.messageService.getMessages();
+  async getChats(@Query() dto: GetDTO) {
+    return this.messageService.getChats(dto);
+  }
+
+  @Get('messages/:id')
+  async getChatByContact(
+    @Param('id') id: number
+  ) {
+    return this.messageService.getChatByContact(+id)
   }
 
   @Get('contacts')

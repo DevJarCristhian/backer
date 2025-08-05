@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { WhatsappGateway } from './websockets/socket.gateaway';
@@ -13,17 +13,17 @@ export class TaskWhatsappService {
     private readonly whatsappGateway: WhatsappGateway,
     private readonly wsService: WhatsappService,
     private readonly contactService: ContactService,
-  ) {}
-  private readonly logger = new Logger(TaskWhatsappService.name);
+  ) { }
+  // private readonly logger = new Logger(TaskWhatsappService.name);
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   taskMessage() {
     this.SendMessage();
-    this.logger.debug('Sending WhatsApp');
+    // this.logger.debug('Sending WhatsApp');
   }
 
   async SendMessage() {
-    // this.whatsappGateway.emitEvent('Notify', 'SMessage');
+    this.whatsappGateway.emitEvent('test', dayjs().format('HH:mm:ss DD/MM/YYYY'));
     const patient = await this.prisma.historySending.findFirst({
       where: {
         status: 'Pendiente',

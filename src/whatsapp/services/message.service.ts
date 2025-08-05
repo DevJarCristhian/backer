@@ -1,12 +1,98 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { Message } from '../dto/message.dto';
+import { GetDTO } from '../../common/dto/params-dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MessageService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getMessages() {
+  async getChats(dto: GetDTO) {
+    const { search, perPage, page } = dto;
+    console.log(dto);
+
+    const query = Prisma.sql`
+  SELECT m.id, m.body, m.read, m.mediaType, m.fromMe, m.createdAt, m.contactId,
+         c.name, c.number, c.profilePicUrl
+  FROM messages m
+  INNER JOIN (
+    SELECT contactId, MAX(createdAt) AS latest
+    FROM messages
+    GROUP BY contactId
+  ) latest_msg ON m.contactId = latest_msg.contactId AND m.createdAt = latest_msg.latest
+  JOIN contacts c ON c.id = m.contactId
+  ${search ? Prisma.sql`
+    WHERE c.name LIKE ${`%${search}%`} OR c.number LIKE ${`%${search}%`}
+  ` : Prisma.empty}
+  ORDER BY m.createdAt DESC
+  LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
+`;
+
+
+    const serializedData = await this.prisma.$queryRaw<
+      Array<{
+        id: number;
+        body: string;
+        read: boolean;
+        mediaType: string;
+        fromMe: boolean;
+        createdAt: Date;
+        contactId: number;
+        name: string;
+        number: string;
+        profilePicUrl: string;
+      }>
+    >(query);
+
+    const data = serializedData.map((item) => ({
+      contactId: item.contactId,
+      name: item.name,
+      number: item.number,
+      mediaType: item.mediaType,
+      profilePicUrl: item.profilePicUrl,
+      lastMessage: item.body,
+      lastMessageDate: item.createdAt,
+      fromMe: item.fromMe,
+      read: item.read,
+      messages: []
+    }));
+
+    const totalCountQuery = Prisma.sql`
+      SELECT COUNT(*) AS total
+      FROM (
+        SELECT m.contactId
+        FROM messages m
+        INNER JOIN (
+          SELECT contactId, MAX(createdAt) AS latest
+          FROM messages
+          GROUP BY contactId
+        ) latest_msg ON m.contactId = latest_msg.contactId AND m.createdAt = latest_msg.latest
+        JOIN contacts c ON c.id = m.contactId
+        ${search ? Prisma.sql`
+          WHERE c.name LIKE ${`%${search}%`} OR c.number LIKE ${`%${search}%`}
+        ` : Prisma.empty}
+      ) AS subquery;
+    `;
+
+    const totalResult = await this.prisma.$queryRaw(totalCountQuery);
+
+    let total = 0;
+    let last_page = 1;
+
+    if (Array.isArray(totalResult) && totalResult.length > 0) {
+      total = Number(totalResult[0].total);
+      last_page = Math.ceil(total / parseInt(perPage));
+    }
+
+    return {
+      data,
+      total,
+      last_page,
+    };
+  }
+
+  async getChatByContact(contactId: number) {
     const messages = await this.prisma.messages.findMany({
       select: {
         id: true,
@@ -18,58 +104,12 @@ export class MessageService {
         fromMe: true,
         isDelete: true,
         createdAt: true,
-        contact: {
-          select: {
-            id: true,
-            name: true,
-            number: true,
-            profilePicUrl: true,
-          },
-        },
       },
+      where: { contactId },
+      orderBy: { createdAt: 'asc' },
     });
 
-    const groupedMessages = messages.reduce((acc, message) => {
-      const contactId = message.contact.id;
-
-      if (!acc[contactId]) {
-        acc[contactId] = {
-          contactId: contactId,
-          name: message.contact.name,
-          number: message.contact.number,
-          mediaType: message.mediaType,
-          profilePicUrl: message.contact.profilePicUrl,
-          lastMessage: message.body,
-          lastMessageDate: message.createdAt,
-          fromMe: message.fromMe,
-          messages: [],
-        };
-      }
-
-      acc[contactId].messages.push({
-        id: message.id,
-        body: message.body,
-        ack: message.ack,
-        read: message.read,
-        mediaType: message.mediaType,
-        mediaUrl: message.mediaUrl,
-        fromMe: message.fromMe,
-        isDelete: message.isDelete,
-        createdAt: message.createdAt,
-      });
-
-      acc[contactId].mediaType = message.mediaType;
-      acc[contactId].lastMessage = message.body;
-      acc[contactId].lastMessageDate = message.createdAt;
-      acc[contactId].fromMe = message.fromMe;
-
-      return acc;
-    }, {});
-
-    const result = Object.values(groupedMessages);
-    result.sort((a: any, b: any) => b.lastMessageDate - a.lastMessageDate);
-
-    return result;
+    return messages;
   }
 
   async create(data: Message) {
