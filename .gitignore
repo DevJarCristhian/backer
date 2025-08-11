@@ -3,6 +3,7 @@
 /node_modules
 /build
 /public
+/.public
 /.wwebjs_auth
 /.wwebjs_cache
 /sessions
