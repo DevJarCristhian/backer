@@ -18,7 +18,7 @@ import * as fs from 'fs';
 @UseGuards(AuthGuard)
 @Controller('ws')
 export class WSController {
-  constructor(private readonly wsService: WhatsappService) {}
+  constructor(private readonly wsService: WhatsappService) { }
 
   @Post('send-message')
   @UseInterceptors(
@@ -65,6 +65,16 @@ export class WSController {
     try {
       await this.wsService.sendManyMessage(body, +user.id);
       return { status: 200, message: 'Success' };
+    } catch (error) {
+      return { status: 400, message: 'Error' };
+    }
+  }
+
+  @Post('disconnect')
+  async disconnectWS() {
+    try {
+      await this.wsService.closeClient();
+      return true;
     } catch (error) {
       return { status: 400, message: 'Error' };
     }

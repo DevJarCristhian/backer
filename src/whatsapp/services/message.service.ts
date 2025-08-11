@@ -10,7 +10,6 @@ export class MessageService {
 
   async getChats(dto: GetDTO) {
     const { search, perPage, page } = dto;
-    console.log(dto);
 
     const query = Prisma.sql`
   SELECT m.id, m.body, m.read, m.mediaType, m.fromMe, m.createdAt, m.contactId,

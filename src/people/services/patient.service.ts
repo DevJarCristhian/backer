@@ -8,7 +8,7 @@ const dayjs = require('dayjs');
 
 @Injectable()
 export class PatientService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
     const {
@@ -374,7 +374,7 @@ export class PatientService {
   }
 
   async findPatientSelect(dto: GetDTO) {
-    const { search, gender, birthDate, startDate, endDate } = dto;
+    const { search, gender, birthDate, incriptionDate, startDate, endDate } = dto;
 
     let filterQuery = Prisma.sql``;
     const searchQuery = search
@@ -392,7 +392,11 @@ export class PatientService {
     }
 
     if (birthDate) {
-      filterQuery = Prisma.sql`${filterQuery} AND fecha_nacimiento = ${birthDate}`;
+      filterQuery = Prisma.sql`${filterQuery} AND DATE_FORMAT(fecha_nacimiento, '%m-%d') = ${birthDate}`;
+    }
+
+    if (incriptionDate) {
+      filterQuery = Prisma.sql`${filterQuery} AND fecha_inscripcion = ${birthDate}`;
     }
 
     if (startDate && endDate) {
@@ -407,11 +411,12 @@ export class PatientService {
       CONCAT(nombre, ' ', apellido) AS name,
       sexo AS gender,
       celular AS phone,
-      fecha_nacimiento as birthDate
+      fecha_nacimiento as birthDate,
+      fecha_inscripcion AS enrollmentDate
     FROM 
       pacientes
     WHERE 1=1 ${searchQuery} ${filterQuery}
-    ORDER BY name ASC
+    ORDER BY  fecha_inscripcion DESC
     LIMIT 50;
   `;
 

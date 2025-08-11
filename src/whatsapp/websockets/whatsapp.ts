@@ -45,13 +45,18 @@ export class WhatsappService {
     });
 
     this.client.on('qr', (qr: string) => {
+      this.connectionService.updateWhatsapp(1, {
+        session: 'default',
+        qrcode: qr,
+      });
+
       this.whatsappGateway.emitEvent('newQr', qr);
     });
 
     this.client.on('ready', async () => {
       await this.connectionService.updateStatusWhatsapp(1, 'Conectado');
 
-      this.whatsappGateway.emitEvent('ready', 'WhatsApp is ready!');
+      this.whatsappGateway.emitEvent('status', 'ready');
       this.logger.log('WhatsApp is ready!');
     });
 
@@ -98,22 +103,22 @@ export class WhatsappService {
     });
 
     this.client.on('auth_failure', (msg) => {
-      this.whatsappGateway.emitEvent('auth_failure', '❌ Fallo de autenticación');
+      this.whatsappGateway.emitEvent('status', 'fail');
       this.logger.error('❌ Fallo de autenticación:', msg);
     });
 
     this.client.on('disconnected', async (reason) => {
-      this.whatsappGateway.emitEvent('disconnected', `⚠️ Sesión cerrada: ${reason}`);
+      this.whatsappGateway.emitEvent('status', `disconnected`);
       this.logger.warn(`⚠️ Sesión cerrada: ${reason}`);
 
       try {
-        await this.client.destroy();
+        await this.client.logout();
         await this.connectionService.updateStatusWhatsapp(1, 'Desconectado');
+        await this.client.destroy();
         this.logger.log('🧹 Cliente destruido, esperando reinicio...');
 
         setTimeout(() => {
           this.initClient();
-          this.client.initialize();
           this.logger.log('🔄 Cliente reiniciado');
         }, 7000);
       } catch (err) {
@@ -276,6 +281,24 @@ export class WhatsappService {
     } catch (error) {
       console.error('Error al enviar el mensaje:', error);
       return 'error';
+    }
+  }
+
+  async closeClient() {
+    try {
+      await this.client.logout();
+      await this.connectionService.updateStatusWhatsapp(1, 'Desconectado');
+      await this.client.destroy();
+
+      setTimeout(async () => {
+        this.whatsappGateway.emitEvent('status', `disconnected`);
+        this.initClient();
+        this.logger.log('Sesión de WhatsApp cerrada.');
+      }, 7000);
+      return true;
+    } catch (err) {
+      this.logger.error('❌ Error al destruir el cliente:', err);
+      return false;
     }
   }
 }

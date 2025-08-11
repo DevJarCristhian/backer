@@ -6,9 +6,8 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-// import { Role } from 'src/common/enums/role.enum';
 
-export class CreateUserDto {
+export class UpdateUserDto {
   @Transform(({ value }) => value.trim())
   @IsString()
   @MinLength(1)
@@ -16,13 +15,6 @@ export class CreateUserDto {
 
   @IsEmail()
   email: string;
-
-  @Transform(({ value }) => value.trim())
-  @IsString()
-  @MinLength(4)
-  password: string;
-
-  whatsappId?: number | null;
 
   @IsNumber()
   roleId: number;

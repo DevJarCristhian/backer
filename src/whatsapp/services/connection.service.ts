@@ -3,13 +3,13 @@ import { PrismaService } from '../../prisma.service';
 import { Whatsapp } from '../dto/whatsapp.dto';
 import { GetDTO } from '../../common/dto/params-dto';
 import { Template } from '../dto/templates.dto';
-// import { saveFile } from '../../common/functions';
 import { diskStorage, StorageEngine } from 'multer';
 
 @Injectable()
 export class ConnectionService {
   constructor(private prisma: PrismaService) { }
 
+  //Connections WhatsApp
   async getWhatsapps() {
     return this.prisma.whatsapps.findMany();
   }
@@ -34,12 +34,17 @@ export class ConnectionService {
 
   async updateWhatsapp(
     id: number,
-    data: { session: string; qrcode: string; status: string },
+    data: { session: string; qrcode: string; battery?: string },
   ) {
-    await this.prisma.whatsapps.update({
-      where: { id },
-      data,
-    });
+    const existingWhatsapp = await this.prisma.whatsapps.findFirst()
+
+    if (existingWhatsapp) {
+      await this.prisma.whatsapps.update({
+        where: { id },
+        data,
+      });
+    }
+
     return 'Whatsapp actualizado exitosamente';
   }
 
@@ -51,6 +56,7 @@ export class ConnectionService {
     return 'Estado actualizado exitosamente';
   }
 
+  //Templates
   async getTemplates(dto: GetDTO) {
     const { search } = dto;
 

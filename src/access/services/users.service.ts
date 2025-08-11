@@ -1,14 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { PassUserDto } from '../dto/pass-user.dto';
 import { PrismaService } from '../../prisma.service';
-import { Prisma } from '@prisma/client';
 import { GetDTO } from '../../common/dto/params-dto';
 import * as bcrypt from 'bcrypt';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
     const { search } = dto;
@@ -32,19 +33,19 @@ export class UsersService {
       },
       where: search
         ? {
-            OR: [
-              {
-                name: {
-                  contains: search,
-                },
+          OR: [
+            {
+              name: {
+                contains: search,
               },
-              {
-                email: {
-                  contains: search,
-                },
+            },
+            {
+              email: {
+                contains: search,
               },
-            ],
-          }
+            },
+          ],
+        }
         : {},
     });
 
@@ -57,15 +58,36 @@ export class UsersService {
       throw new BadRequestException('User already exists');
     }
 
+    const wsId = await this.prisma.whatsapps.findFirst()
+
     createUserDto.password = await this.hashPassword(createUserDto.password);
+    createUserDto.whatsappId = wsId?.id || null;
+
     await this.prisma.users.create({ data: createUserDto });
 
     return 'User created Successfully';
   }
 
-  async update(id: number, updateUserDto: CreateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const user = await this.findOneByEmail(updateUserDto.email);
+
+    if (user && user.id !== id) {
+      return false;
+    }
+
     await this.prisma.users.update({ data: updateUserDto, where: { id: id } });
     return 'User update Successfully';
+  }
+
+  async updatePassword(id: number, passUserDto: PassUserDto) {
+    const hashedPassword = await this.hashPassword(passUserDto.password);
+
+    await this.prisma.users.update({
+      where: { id: id },
+      data: { password: hashedPassword },
+    });
+
+    return 'Password updated Successfully';
   }
 
   findProfileWithPassword(email: string) {
@@ -147,19 +169,19 @@ export class UsersService {
       },
       where: search
         ? {
-            OR: [
-              {
-                name: {
-                  contains: search,
-                },
+          OR: [
+            {
+              name: {
+                contains: search,
               },
-              {
-                email: {
-                  contains: search,
-                },
+            },
+            {
+              email: {
+                contains: search,
               },
-            ],
-          }
+            },
+          ],
+        }
         : {},
     });
 

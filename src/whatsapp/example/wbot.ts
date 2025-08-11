@@ -1,6 +1,6 @@
 import qrCode from 'qrcode-terminal';
 import { Client, LocalAuth } from 'whatsapp-web.js';
-import { getIO } from '../ws/socket';
+import { getIO } from './socket';
 import { Whatsapp } from '../dto/whatsapp.dto';
 import AppError from '../functions/AppError';
 // import { handleMessage } from '../services/WbotServices/wbotMessageListener';

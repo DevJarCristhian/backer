@@ -9,7 +9,7 @@ import { MessageService } from './services/message.service';
 import { WSController } from './ws.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { TaskWhatsappService } from './taskWhatsapp.service';
+import { TaskWhatsappService } from './services/taskWhatsapp.service';
 
 @Module({
   imports: [
@@ -30,4 +30,4 @@ import { TaskWhatsappService } from './taskWhatsapp.service';
     TaskWhatsappService,
   ],
 })
-export class WhatsappModule {}
+export class WhatsappModule { }

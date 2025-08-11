@@ -14,4 +14,6 @@ export class GetDTO {
   birthDate?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+
+  incriptionDate?: string | null;
 }

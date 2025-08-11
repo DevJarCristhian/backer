@@ -1,20 +1,15 @@
 import {
-  ConnectedSocket,
-  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway()
 export class WhatsappGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
-  constructor() {}
+  implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor() { }
 
   @WebSocketServer()
   server: Server;
@@ -27,11 +22,13 @@ export class WhatsappGateway
     console.log(`Client disconnect: ${client.id} `);
   }
 
-  @SubscribeMessage('sendTest')
-  handleMessage(client: Socket, message: string): void {
-    console.log(`Mensaje recibido : ${message}`);
-    this.server.emit('newMessage', message);
-  }
+  // ConnectedSocket,
+  // MessageBody,
+  // @SubscribeMessage('sendTest')
+  // handleMessage(client: Socket, message: string): void {
+  //   console.log(`Mensaje recibido : ${message}`);
+  //   this.server.emit('newMessage', message);
+  // }
 
   emitEvent(event: string, message: any): void {
     this.server.emit(event, message);

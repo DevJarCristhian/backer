@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '../auth/guard/auth.guard';
 import { GetDTO } from '../common/dto/params-dto';
-import { Response } from 'express';
 import { CalendarService } from './calendar.service';
 import { UpdateCalendarDto } from './dto/update-calendar.dto';
 import { StoreCalendarDto } from './dto/store-calendar.dto';
@@ -21,11 +20,11 @@ import { UserActiveI } from 'src/common/interfaces/user-active.interface';
 @UseGuards(AuthGuard)
 @Controller('calendar')
 export class CalendarController {
-  constructor(private readonly calendarService: CalendarService) {}
+  constructor(private readonly calendarService: CalendarService) { }
 
   @Get()
-  findAll() {
-    return this.calendarService.findAll();
+  findAll(@Query() dto: GetDTO) {
+    return this.calendarService.findAll(dto);
   }
 
   @Get(':id')

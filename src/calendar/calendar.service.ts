@@ -10,7 +10,9 @@ const dayjs = require('dayjs');
 export class CalendarService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findAll() {
+  async findAll(dto: GetDTO) {
+    const { startDate, endDate } = dto;
+
     const query = await this.prisma.calendar.findMany({
       select: {
         id: true,
@@ -45,6 +47,10 @@ export class CalendarService {
       },
       where: {
         status: { not: 'Eliminado' },
+        startDate: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
       },
     });
 
@@ -179,7 +185,7 @@ export class CalendarService {
       });
     }
 
-    return 'Caldendario actualizado correctamente';
+    return 'Calendario actualizado correctamente';
   }
 
   async getPatientCalendarId(id: number) {
@@ -232,4 +238,24 @@ export class CalendarService {
 
     return data;
   }
+
+  //   async getHistoryCalendarId(id: number) {
+  //   const query = await this.prisma.historySending.findMany({
+  //     select: {
+  //       id: true,
+  //       namePatient: true,
+  //       patientId: true,
+  //       phone: true,
+  //       status: true,
+  //     },
+  //     orderBy: {
+  //       createdAt: 'desc',
+  //     },
+  //     where: {
+  //       calendarId: id,
+  //     },
+  //   });
+
+  //   return query;
+  // }
 }

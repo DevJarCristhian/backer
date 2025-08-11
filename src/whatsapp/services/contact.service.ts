@@ -4,7 +4,7 @@ import { Contact } from '../dto/contact.dto';
 
 @Injectable()
 export class ContactService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getContacts() {
     return this.prisma.contacts.findMany({
@@ -30,12 +30,4 @@ export class ContactService {
     }
     return contactId.id;
   }
-
-  // async update(id: number, data: Whatsapp) {
-  //   await this.prisma.whatsapps.update({
-  //     where: { id },
-  //     data,
-  //   });
-  //   return 'Whatsapp actualizado exitosamente';
-  // }
 }

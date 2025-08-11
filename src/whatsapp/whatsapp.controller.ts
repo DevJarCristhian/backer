@@ -32,11 +32,11 @@ export class WhatsappController {
     private readonly contactService: ContactService,
   ) { }
 
+  //Connections WhatsApp
   @Get()
   async getWhatsapps() {
     return this.connectionService.getWhatsapps();
   }
-
 
   @Get('/active')
   async whatsappActive() {
@@ -57,6 +57,7 @@ export class WhatsappController {
   }
 
 
+  //Messages
   @Get('messages')
   async getChats(@Query() dto: GetDTO) {
     return this.messageService.getChats(dto);
@@ -69,11 +70,13 @@ export class WhatsappController {
     return this.messageService.getChatByContact(+id)
   }
 
+  //Contacts
   @Get('contacts')
   async getContacts() {
     return this.contactService.getContacts();
   }
 
+  //Templates
   @Get('templates')
   findAllTemplates(@Query() dto: GetDTO) {
     return this.connectionService.getTemplates(dto);

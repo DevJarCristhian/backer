@@ -12,12 +12,14 @@ import {
 import { UsersService } from './services/users.service';
 import { RolesService } from './services/roles.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { ActiveUser } from '../common/decorators/active-user.decorator';
 import { UserActiveI } from 'src/common/interfaces/user-active.interface';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { GetDTO } from './../common/dto/params-dto';
 import { Response } from 'express';
+import { PassUserDto } from './dto/pass-user.dto';
 
 @UseGuards(AuthGuard)
 @Controller('access')
@@ -25,7 +27,7 @@ export class AccessController {
   constructor(
     private readonly usersService: UsersService,
     private readonly rolesService: RolesService,
-  ) {}
+  ) { }
 
   @Get('users')
   findAllUsers(@Query() dto: GetDTO) {
@@ -44,9 +46,18 @@ export class AccessController {
   updateUser(
     @ActiveUser() user: UserActiveI,
     @Param('id') id: string,
-    @Body() updateUserDto: CreateUserDto,
+    @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(+id, updateUserDto);
+  }
+
+  @Put('users/password/:id')
+  updatePassword(
+    @ActiveUser() user: UserActiveI,
+    @Param('id') id: string,
+    @Body() passUserDto: PassUserDto,
+  ) {
+    return this.usersService.updatePassword(+id, passUserDto);
   }
 
   @Get('users/roles')
