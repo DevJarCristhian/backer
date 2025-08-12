@@ -12,22 +12,21 @@ export class MessageService {
     const { search, perPage, page } = dto;
 
     const query = Prisma.sql`
-  SELECT m.id, m.body, m.read, m.mediaType, m.fromMe, m.createdAt, m.contactId,
-         c.name, c.number, c.profilePicUrl
-  FROM messages m
-  INNER JOIN (
-    SELECT contactId, MAX(createdAt) AS latest
-    FROM messages
-    GROUP BY contactId
-  ) latest_msg ON m.contactId = latest_msg.contactId AND m.createdAt = latest_msg.latest
-  JOIN contacts c ON c.id = m.contactId
-  ${search ? Prisma.sql`
-    WHERE c.name LIKE ${`%${search}%`} OR c.number LIKE ${`%${search}%`}
-  ` : Prisma.empty}
-  ORDER BY m.createdAt DESC
-  LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
-`;
-
+      SELECT m.id, m.body, m.read, m.mediaType, m.fromMe, m.createdAt, m.contactId,
+            c.name, c.number, c.profilePicUrl
+      FROM messages m
+      INNER JOIN (
+        SELECT contactId, MAX(createdAt) AS latest
+        FROM messages
+        GROUP BY contactId
+      ) latest_msg ON m.contactId = latest_msg.contactId AND m.createdAt = latest_msg.latest
+      INNER JOIN contacts c ON c.id = m.contactId
+      ${search ? Prisma.sql`
+        WHERE c.name LIKE ${`%${search}%`} OR c.number LIKE ${`%${search}%`}
+      ` : Prisma.empty}
+      ORDER BY m.createdAt DESC
+      LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
+    `;
 
     const serializedData = await this.prisma.$queryRaw<
       Array<{

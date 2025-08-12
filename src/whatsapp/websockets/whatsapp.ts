@@ -61,10 +61,7 @@ export class WhatsappService {
     });
 
     this.client.on('message', async (message) => {
-      if (
-        (message.from != 'status@broadcast' && message.type == 'chat') ||
-        message.type == 'image'
-      ) {
+      if (message.from != 'status@broadcast' && !message.from.endsWith('@g.us') && (message.type === 'chat' || message.type === 'image')) {
         const detailContact = await message.getContact();
         let contact = await this.contactService.getContactByNumber(
           detailContact.number,
