@@ -52,8 +52,7 @@ export class OpportunityService {
                 OR: [
                   { documentNumber: { contains: search } },
                   { firstName: { contains: search } },
-                  { lastName: { contains: search } },
-                  { description: { contains: search } },
+                  { lastName: { contains: search } }
                 ],
               },
             },
