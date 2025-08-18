@@ -192,3 +192,130 @@ model notify {
   user      users    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
+
+//Mapping Tables
+model product {
+  id              BigInt        @id @map("id")
+  name            String        @map("nombre")
+  description     String        @map("descripcion")
+  condition       Int           @map("condicion")
+  recipient       String        @map("recibe")
+  maxRedemptions  Int           @map("maximo_canjes")
+  image           String        @map("imagen")
+  longDescription String        @map("descripcion_larga")
+  unit            String?       @map("unidad_medida")
+  notes           String?       @map("observacion")
+  isActive        Boolean?      @map("estado")
+  guatemala       Int?          @map("guatemala")
+  honduras        Int?          @map("honduras")
+  panama          Int?          @map("panama")
+  nicaragua       Int?          @map("nicaragua")
+  costaRica       Int?          @map("costarica")
+  productLine     Int?          @map("linea")
+  opportunity     opportunity[]
+
+  @@map("productos")
+}
+
+model pharmacy {
+  id           BigInt        @id @map("id")
+  chainId      BigInt        @map("id_cadena")
+  pharmacyIdd  Int           @map("id_farmacia")
+  departmentId BigInt        @map("id_departamento")
+  branchName   String        @map("sucursal")
+  phone        String        @map("telefono")
+  address      String        @map("direccion")
+  email        String        @map("email")
+  municipality String        @map("municipio")
+  opportunity  opportunity[]
+
+  @@map("farmacias")
+}
+
+model patient {
+  id               BigInt    @id
+  firstName        String    @map("nombre")
+  lastName         String    @map("apellido")
+  address          String    @map("direccion")
+  email            String    @map("correo")
+  sex              Int       @map("sexo")
+  phone            String    @map("celular")
+  documentType     String    @map("tipo_documento")
+  documentNumber   String    @map("numero_documento")
+  birthDate        DateTime? @map("fecha_nacimiento") @db.Date
+  patientInfo      String?   @map("informacion_paciente")
+  takesMedication  Boolean?  @map("consumo_medicamentos")
+  sendEmail        Boolean?  @map("envio_correo")
+  sendWhatsapp     Boolean?  @map("envio_whatsapp")
+  sendPhysicalMail Boolean?  @map("envio_correo_fisico")
+  registrationDate DateTime? @map("fecha_inscripcion") @db.Date
+  programStartDate DateTime? @map("fecha_inicio_programa") @db.Date
+  verified         Int?      @map("verificado")
+  redemptionCount  Int?      @map("cantidad_canjes")
+  contactName      String?   @map("nombre_contacto")
+  description      String?   @map("descripcion")
+  createdAt        DateTime? @default(now()) @map("fecha_creacion")
+  updatedAt        DateTime? @updatedAt @map("fecha_actualiza")
+  isDeleted        Boolean?  @default(false) @map("eliminado")
+
+  // Foreign keys (renamed to English)
+  countryId       Int     @map("id_pais")
+  departmentId    Int     @map("id_departamento")
+  // department   Department @relation(fields: [departmentId], references: [id])
+  doctorId        BigInt? @map("id_medico")
+  // doctor   Doctor? @relation(fields: [doctorId], references: [id])
+  operatorId      Int?    @map("id_operador")
+  institutionId   BigInt? @map("id_institucion")
+  // institution   Institution? @relation(fields: [institutionId], references: [id])
+  maritalStatusId BigInt? @map("estado_civil")
+  patientStatusId BigInt? @map("estado_paciente")
+  patientTypeId   BigInt? @map("tipo_paciente")
+  genderId        BigInt? @map("genero")
+
+  createdById BigInt?       @map("usuario_crea")
+  updatedById BigInt?       @map("usuario_modifica")
+  opportunity opportunity[]
+
+  @@map("pacientes")
+}
+
+model opportunity {
+  id BigInt @id @map("id")
+
+  patientId BigInt?  @map("id_paciente")
+  patient   patient? @relation(fields: [patientId], references: [id])
+
+  pharmacyId BigInt?   @map("id_farmacia")
+  pharmacy   pharmacy? @relation(fields: [pharmacyId], references: [id])
+
+  productId BigInt?  @map("id_producto")
+  product   product? @relation(fields: [productId], references: [id])
+
+  cancellationUserId   Int       @map("id_usuario_anulacion")
+  invoiceSeries        String    @map("serie_factura")
+  invoiceNumber        String    @map("no_factura")
+  quantity             Int       @map("cantidad")
+  invoiceDate          DateTime? @map("fecha_facturacion") @db.Date
+  active               Boolean?  @map("activo")
+  quantitiesUsed       Int?      @map("cantidades_utilizadas")
+  cancellationReason   String?   @map("anulacion")
+  bonusDate            DateTime? @map("fecha_bonificacion")
+  redemptionStatus     Int?      @map("estado_canje")
+  validationStatus     Int?      @map("validacion")
+  lastDoseDate         DateTime? @map("fecha_ultima_toma")
+  treatmentAbandonDate DateTime? @map("fecha_abandono_tratamiento")
+  purchaseReasonId     BigInt?   @map("id_motivo_compra")
+  cancellationReasonId BigInt?   @map("id_motivo_anulacion")
+  diagnosisId          BigInt?   @map("id_diagnostico")
+  dosageId             BigInt?   @map("id_dosis")
+  treatmentDurationId  BigInt?   @map("id_tiempo_tratamiento")
+  otherReasonId        BigInt?   @map("id_otros")
+  notes                String?   @map("observaciones")
+  dateCreated          DateTime? @default(now()) @map("fecha_creacion")
+  dateUpdated          DateTime? @map("fecha_actualiza")
+  createdBy            BigInt?   @map("usuario_crea")
+  updatedBy            BigInt?   @map("usuario_modifica")
+  diagnosisIdd         String?   @map("id_diadnostico")
+
+  @@map("oportunidades")
+}

@@ -7,114 +7,207 @@ import { GetDTO } from '../dto/opportunity/get-opportunity.dto';
 
 @Injectable()
 export class OpportunityService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
     const {
       search,
-      perPage,
-      page,
+      perPage = 10,
+      page = 1,
       emissionDate,
       patientId,
       productId,
       pharmacyId,
-      userId,
       startDate,
       endDate,
     } = dto;
 
-    let filterQuery = Prisma.sql``;
-    const searchQuery = search
-      ? Prisma.sql`
-          AND (
-            o.serie_factura LIKE ${`%${search}%`} OR 
-            o.no_factura LIKE ${`%${search}%`} OR 
-            o.fecha_facturacion LIKE ${`%${search}%`} OR
-            pa.numero_documento LIKE ${`%${search}%`} OR
-            pa.nombre LIKE ${`%${search}%`} OR
-            pa.apellido LIKE ${`%${search}%`} OR
-            pa.descripcion LIKE ${`%${search}%`}
-          )
-        `
-      : Prisma.sql``;
+    const where: Prisma.opportunityWhereInput = {
+      ...(patientId && { patientId: BigInt(patientId) }),
+      ...(productId && { productId: BigInt(productId) }),
+      ...(pharmacyId && { pharmacyId: BigInt(pharmacyId) }),
+      ...(emissionDate && { invoiceDate: new Date(emissionDate) }),
+      ...(startDate && endDate
+        ? {
+          invoiceDate: {
+            gte: new Date(startDate),
+            lte: new Date(`${endDate}`),
+          },
+        }
+        : startDate
+          ? {
+            invoiceDate: {
+              gte: new Date(startDate),
+              lte: new Date(`${startDate}`),
+            },
+          }
+          : {}),
+      ...(search && {
+        OR: [
+          { invoiceSeries: { contains: search } },
+          { invoiceNumber: { contains: search } },
+          {
+            patient: {
+              is: {
+                OR: [
+                  { documentNumber: { contains: search } },
+                  { firstName: { contains: search } },
+                  { lastName: { contains: search } },
+                  { description: { contains: search } },
+                ],
+              },
+            },
+          },
+        ],
+      }),
+    };
 
-    if (patientId) {
-      filterQuery = Prisma.sql`${filterQuery} AND o.id_paciente = ${patientId}`;
-    }
+    const [rawData, total] = await this.prisma.$transaction([
+      this.prisma.opportunity.findMany({
+        select: {
+          id: true,
+          patient: {
+            select: {
+              documentNumber: true,
+              firstName: true,
+              lastName: true,
+              description: true
+            }
+          },
+          pharmacy: {
+            select: {
+              branchName: true
+            }
+          },
+          product: {
+            select: {
+              description: true
+            }
+          },
+          invoiceSeries: true,
+          invoiceNumber: true,
+          quantity: true,
+          invoiceDate: true,
+          dateUpdated: true,
+        },
+        where,
+        orderBy: { invoiceDate: 'desc' },
+        skip: (+page - 1) * +perPage,
+        take: +perPage,
+      }),
+      this.prisma.opportunity.count({ where }),
+    ]);
 
-    if (productId) {
-      filterQuery = Prisma.sql`${filterQuery} AND o.id_producto = ${productId}`;
-    }
 
-    if (pharmacyId) {
-      filterQuery = Prisma.sql`${filterQuery} AND o.id_farmacia = ${pharmacyId}`;
-    }
+    const formattedData = rawData.map(o => ({
+      id: typeof o.id === 'bigint' ? o.id.toString() : o.id,
+      documentNumber: o.patient?.documentNumber ?? '',
+      patientFullName: `${o.patient?.firstName ?? ''} ${o.patient?.lastName ?? ''}`,
+      farmacyName: o.pharmacy?.branchName ?? '',
+      productName: o.product.description,
+      invoiceSerie: o.invoiceSeries,
+      invoiceNumber: o.invoiceNumber,
+      quantity: o.quantity,
+      invoiceDate: o.invoiceDate,
+      dateUpdated: o.dateUpdated
+    }));
 
-    if (userId) {
-      filterQuery = Prisma.sql`${filterQuery} AND o.usuario_modifica = ${userId}`;
-    }
-
-    if (emissionDate) {
-      filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion = ${emissionDate}`;
-    }
-
-    if (startDate && endDate) {
-      const endDateTime = endDate + ' 23:59:59';
-      filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion BETWEEN ${startDate} AND ${endDateTime}`;
-    }
-
-    if (startDate && !endDate) {
-      filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion = ${startDate}`;
-    }
-
-    const query = Prisma.sql`
-      SELECT 
-        o.id,
-        pa.numero_documento as documentNumber,
-        CONCAT(pa.nombre, ' ', pa.apellido) AS patientFullName,
-        fa.sucursal as farmacyName,
-        pro.descripcion as productName,
-        o.serie_factura as invoiceSerie,
-        o.no_factura as invoiceNumber,
-        o.cantidad as quantity,
-        o.fecha_facturacion as invoiceDate,
-        o.fecha_actualiza as dateUpdated
-      FROM 
-        oportunidades AS o
-      LEFT JOIN pacientes AS pa ON o.id_paciente = pa.id
-      LEFT JOIN farmacias AS fa ON o.id_farmacia = fa.id
-      LEFT JOIN productos AS pro ON o.id_producto = pro.id
-      WHERE 1=1 ${searchQuery} ${filterQuery}
-      ORDER BY o.id DESC
-      LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
-    `;
-
-    const serializedData = await this.prisma.$queryRaw(query);
-    const data = JSON.parse(
-      JSON.stringify(serializedData, (key, value) =>
-        typeof value === 'bigint' ? value.toString() : value,
-      ),
-    );
-
-    const totalQuery = Prisma.sql`
-      SELECT COUNT(*) AS total
-      FROM oportunidades AS o
-      LEFT JOIN pacientes AS pa ON o.id_paciente = pa.id
-      LEFT JOIN farmacias AS fa ON o.id_farmacia = fa.id
-      LEFT JOIN productos AS pro ON o.id_producto = pro.id
-      WHERE 1=1 ${searchQuery} ${filterQuery}
-    `;
-
-    const totalResult = await this.prisma.$queryRaw(totalQuery);
-    const total = Number(totalResult[0].total);
-    const last_page = Math.ceil(total / parseInt(perPage));
+    const last_page = Math.ceil(total / +perPage);
 
     return {
-      data,
+      data: formattedData,
       total,
       last_page,
     };
   }
+
+  //   async findAll(dto: GetDTO) {
+  //   const {
+  //     search,
+  //     perPage,
+  //     page,
+  //     emissionDate,
+  //     patientId,
+  //     productId,
+  //     pharmacyId,
+  //     userId,
+  //     startDate,
+  //     endDate,
+  //   } = dto;
+
+  //   let filterQuery = Prisma.sql``;
+  //   const searchQuery = search
+  //     ? Prisma.sql`
+  //         AND (
+  //           o.serie_factura LIKE ${`%${search}%`} OR 
+  //           o.no_factura LIKE ${`%${search}%`} OR 
+  //           o.fecha_facturacion LIKE ${`%${search}%`} OR
+  //           pa.numero_documento LIKE ${`%${search}%`} OR
+  //           pa.nombre LIKE ${`%${search}%`} OR
+  //           pa.apellido LIKE ${`%${search}%`} OR
+  //           pa.descripcion LIKE ${`%${search}%`}
+  //         )
+  //       `
+  //     : Prisma.sql``;
+
+  //   if (patientId) {
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.id_paciente = ${patientId}`;
+  //   }
+
+  //   if (productId) {
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.id_producto = ${productId}`;
+  //   }
+
+  //   if (pharmacyId) {
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.id_farmacia = ${pharmacyId}`;
+  //   }
+
+  //   if (userId) {
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.usuario_modifica = ${userId}`;
+  //   }
+
+  //   if (emissionDate) {
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion = ${emissionDate}`;
+  //   }
+
+  //   if (startDate && endDate) {
+  //     const endDateTime = endDate + ' 23:59:59';
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion BETWEEN ${startDate} AND ${endDateTime}`;
+  //   }
+
+  //   if (startDate && !endDate) {
+  //     filterQuery = Prisma.sql`${filterQuery} AND o.fecha_facturacion = ${startDate}`;
+  //   }
+
+  //   const query = Prisma.sql`
+  //     SELECT 
+  //       o.id,
+  //       pa.numero_documento as documentNumber,
+  //       CONCAT(pa.nombre, ' ', pa.apellido) AS patientFullName,
+  //       fa.sucursal as farmacyName,
+  //       pro.descripcion as productName,
+  //       o.serie_factura as invoiceSerie,
+  //       o.no_factura as invoiceNumber,
+  //       o.cantidad as quantity,
+  //       o.fecha_facturacion as invoiceDate,
+  //       o.fecha_actualiza as dateUpdated
+  //     FROM 
+  //       oportunidades AS o
+  //     LEFT JOIN pacientes AS pa ON o.id_paciente = pa.id
+  //     LEFT JOIN farmacias AS fa ON o.id_farmacia = fa.id
+  //     LEFT JOIN productos AS pro ON o.id_producto = pro.id
+  //     WHERE 1=1 ${searchQuery} ${filterQuery}
+  //     ORDER BY o.id DESC
+  //     LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
+  //   `;
+
+  //   return {
+  //     data,
+  //     total,
+  //     last_page,
+  //   };
+  // }
+
 
   async getOpportunityById(id: number) {
     const query = Prisma.sql`
@@ -260,10 +353,6 @@ export class OpportunityService {
     );
 
     return data;
-    // -- o.fecha_creacion,
-    // -- o.fecha_actualiza,
-    // -- o.usuario_crea,
-    // -- o.usuario_modifica
   }
 
   async exportToExcel(dto: GetDTO) {
