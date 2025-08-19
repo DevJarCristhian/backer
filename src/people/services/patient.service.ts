@@ -448,6 +448,7 @@ export class PatientService {
       nombre_contacto = ${dto.contactName},
       descripcion = ${dto.description},
       fecha_actualiza =  ${new Date()},
+      celular = ${dto.phone},
       usuario_modifica = ${user}
       WHERE id = ${id};
     `;

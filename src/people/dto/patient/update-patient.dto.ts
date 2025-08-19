@@ -5,4 +5,5 @@ export class UpdatePatientDto {
   patientType: number | null;
   contactName: string;
   description: string;
+  phone: string;
 }
