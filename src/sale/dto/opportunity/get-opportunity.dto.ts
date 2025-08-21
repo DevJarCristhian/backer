@@ -7,6 +7,7 @@ export class GetDTO {
 
   perPage?: string;
   page?: string;
+  country?: number | null;
 
   emissionDate?: string | null;
   patientId?: string | null;

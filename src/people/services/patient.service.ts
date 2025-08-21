@@ -15,6 +15,7 @@ export class PatientService {
       search,
       perPage,
       page,
+      country,
       gender,
       department,
       birthDate,
@@ -29,10 +30,14 @@ export class PatientService {
               p.nombre LIKE ${`%${search}%`} OR
               p.apellido LIKE ${`%${search}%`} OR
               p.numero_documento LIKE ${`%${search}%`} OR
-              dept.nombre LIKE ${`%${search}%`}
+              p.celular LIKE ${`%${search}%`}
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND p.id_pais = ${country}`;
+    }
 
     if (gender) {
       filterQuery = Prisma.sql`${filterQuery} AND p.sexo = ${gender}`;
@@ -160,7 +165,7 @@ export class PatientService {
   }
 
   async getAllPatients(dto: GetDTO) {
-    const { search, gender, department, birthDate, startDate, endDate } = dto;
+    const { search, country, gender, department, birthDate, startDate, endDate } = dto;
 
     let filterQuery = Prisma.sql``;
     const searchQuery = search
@@ -169,10 +174,14 @@ export class PatientService {
               p.nombre LIKE ${`%${search}%`} OR
               p.apellido LIKE ${`%${search}%`} OR
               p.numero_documento LIKE ${`%${search}%`} OR
-              dept.nombre LIKE ${`%${search}%`}
+              p.celular LIKE ${`%${search}%`}
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND p.id_pais = ${country}`;
+    }
 
     if (gender) {
       filterQuery = Prisma.sql`${filterQuery} AND p.sexo = ${gender}`;
@@ -374,7 +383,7 @@ export class PatientService {
   }
 
   async findPatientSelect(dto: GetDTO) {
-    const { search, gender, birthDate, incriptionDate, startDate, endDate } = dto;
+    const { search, country, gender, birthDate, incriptionDate, startDate, endDate } = dto;
 
     let filterQuery = Prisma.sql``;
     const searchQuery = search
@@ -382,10 +391,15 @@ export class PatientService {
         AND (
           nombre LIKE ${`%${search}%`} OR 
           apellido LIKE ${`%${search}%`} OR 
-          numero_documento LIKE ${`%${search}%`}
+          numero_documento LIKE ${`%${search}%`} OR
+          celular LIKE ${`%${search}%`}
         )
       `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND id_pais = ${country}`;
+    }
 
     if (gender) {
       filterQuery = Prisma.sql`${filterQuery} AND sexo = ${gender}`;

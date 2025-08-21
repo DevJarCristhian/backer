@@ -6,10 +6,10 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class DoctorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
-    const { search, perPage, page, department, city, startDate, endDate } = dto;
+    const { search, perPage, page, country, department, city, startDate, endDate } = dto;
 
     let filterQuery = Prisma.sql``;
     const searchQuery = search
@@ -20,6 +20,10 @@ export class DoctorService {
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.id_pais = ${country}`;
+    }
 
     if (department) {
       filterQuery = Prisma.sql`${filterQuery} AND d.id_departamento = ${department}`;
@@ -86,7 +90,7 @@ export class DoctorService {
   }
 
   async getAllDoctors(dto: GetDTO) {
-    const { search, department, city, startDate, endDate } = dto;
+    const { search, country, department, city, startDate, endDate } = dto;
 
     let filterQuery = Prisma.sql``;
     const searchQuery = search
@@ -97,6 +101,10 @@ export class DoctorService {
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.id_pais = ${country}`;
+    }
 
     if (department) {
       filterQuery = Prisma.sql`${filterQuery} AND d.id_departamento = ${department}`;
@@ -128,7 +136,7 @@ export class DoctorService {
         LEFT JOIN paises AS p ON d.id_pais = p.id
         LEFT JOIN departamentos AS dept ON d.id_departamento = dept.id
         LEFT JOIN municipio AS mun ON d.id_municipio = mun.id
-        WHERE 1=1 ${searchQuery}  ${filterQuery}
+        WHERE 1=1 ${searchQuery} ${filterQuery}
         ORDER BY d.nombre ASC
     `;
 

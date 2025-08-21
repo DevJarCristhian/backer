@@ -14,6 +14,7 @@ export class OpportunityService {
       search,
       perPage = 10,
       page = 1,
+      country,
       emissionDate,
       patientId,
       productId,
@@ -23,6 +24,7 @@ export class OpportunityService {
     } = dto;
 
     const where: Prisma.opportunityWhereInput = {
+      ...(country && country != 0 && { countryId: BigInt(country) }),
       ...(patientId && { patientId: BigInt(patientId) }),
       ...(productId && { productId: BigInt(productId) }),
       ...(pharmacyId && { pharmacyId: BigInt(pharmacyId) }),
@@ -44,15 +46,14 @@ export class OpportunityService {
           : {}),
       ...(search && {
         OR: [
-          { invoiceSeries: { contains: search } },
           { invoiceNumber: { contains: search } },
           {
             patient: {
               is: {
                 OR: [
                   { documentNumber: { contains: search } },
-                  { firstName: { contains: search } },
-                  { lastName: { contains: search } }
+                  { firstName: { contains: search } }
+                  // { lastName: { contains: search } }
                 ],
               },
             },
@@ -83,6 +84,11 @@ export class OpportunityService {
               description: true
             }
           },
+          country: {
+            select: {
+              name: true
+            }
+          },
           invoiceSeries: true,
           invoiceNumber: true,
           quantity: true,
@@ -102,6 +108,7 @@ export class OpportunityService {
       id: typeof o.id === 'bigint' ? o.id.toString() : o.id,
       documentNumber: o.patient?.documentNumber ?? '',
       patientFullName: `${o.patient?.firstName ?? ''} ${o.patient?.lastName ?? ''}`,
+      countryName: o.country?.name ?? '',
       farmacyName: o.pharmacy?.branchName ?? '',
       productName: o.product.description,
       invoiceSerie: o.invoiceSeries,
@@ -257,6 +264,7 @@ export class OpportunityService {
   async getAllOpportunities(dto: GetDTO) {
     const {
       search,
+      country,
       emissionDate,
       patientId,
       productId,
@@ -280,6 +288,10 @@ export class OpportunityService {
           )
         `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND o.id_pais = ${country}`;
+    }
 
     if (patientId) {
       filterQuery = Prisma.sql`${filterQuery} AND o.id_paciente = ${patientId}`;

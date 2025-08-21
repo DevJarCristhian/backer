@@ -3,13 +3,17 @@ import { PrismaService } from '../../prisma.service';
 import { GetDTO } from '../../common/dto/params-dto';
 import { Prisma } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
+import { UpdatePriceDto } from '../dto/prices/update-prices.dto';
 
 @Injectable()
 export class PricesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
-    const { search, perPage, page } = dto;
+    const { search, perPage, page, country } = dto;
+
+    let filterQuery = Prisma.sql``;
+
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -19,9 +23,14 @@ export class PricesService {
           `
       : Prisma.sql``;
 
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND lp.id_pais = ${country}`;
+    }
+
     const query = Prisma.sql`
       SELECT
         lp.id,
+        lp.id_cadena AS chainId,
         p.nombre AS countryName,
         pro.nombre AS productName,
         c.cadena AS chainName,
@@ -33,7 +42,7 @@ export class PricesService {
       LEFT JOIN paises AS p ON lp.id_pais = p.id
       LEFT JOIN productos AS pro ON lp.id_producto = pro.id
       LEFT JOIN cadena AS c ON lp.id_cadena = c.id
-      WHERE 1=1 ${searchQuery}
+      WHERE 1=1 ${searchQuery} ${filterQuery}
       ORDER BY pro.nombre ASC
       LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
     `;
@@ -50,7 +59,7 @@ export class PricesService {
     LEFT JOIN paises AS p ON lp.id_pais = p.id
     LEFT JOIN productos AS pro ON lp.id_producto = pro.id
     LEFT JOIN cadena AS c ON lp.id_cadena = c.id
-    WHERE 1=1 ${searchQuery}`;
+    WHERE 1=1 ${searchQuery} ${filterQuery}`;
 
     const totalResult = await this.prisma.$queryRaw(totalQuery);
 
@@ -65,7 +74,9 @@ export class PricesService {
   }
 
   async getAllPricess(dto: GetDTO) {
-    const { search } = dto;
+    const { search, country } = dto;
+
+    let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -74,6 +85,10 @@ export class PricesService {
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND lp.id_pais = ${country}`;
+    }
 
     const query = Prisma.sql`
         SELECT
@@ -88,7 +103,7 @@ export class PricesService {
         LEFT JOIN paises AS p ON lp.id_pais = p.id
         LEFT JOIN productos AS pro ON lp.id_producto = pro.id
         LEFT JOIN cadena AS c ON lp.id_cadena = c.id
-        WHERE 1=1 ${searchQuery}
+        WHERE 1=1 ${searchQuery} ${filterQuery}
         ORDER BY pro.nombre ASC
       `;
 
@@ -119,5 +134,20 @@ export class PricesService {
     worksheet.getRow(1).font = { bold: true };
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer;
+  }
+
+  async updatePrice(user: number, id: number, dto: UpdatePriceDto) {
+    console.log(dto);
+
+    const query = Prisma.sql`
+        UPDATE lista_precios
+        SET
+        precio = ${dto.price}
+        WHERE id = ${id} AND id_cadena = ${dto.chainId};
+      `;
+
+    await this.prisma.$queryRaw(query);
+
+    return 'Precio actualizado correctamente';
   }
 }

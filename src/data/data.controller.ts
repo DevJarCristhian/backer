@@ -13,6 +13,7 @@ import { Response } from 'express';
 import { ChainService } from './services/chain.service';
 import { InstitutionService } from './services/institution.service';
 import { PharmacyService } from './services/pharmacy.service';
+import { DataService } from './services/data.service';
 
 @UseGuards(AuthGuard)
 @Controller('data')
@@ -21,7 +22,8 @@ export class DataController {
     private readonly chainService: ChainService,
     private readonly institutionService: InstitutionService,
     private readonly pharmacyService: PharmacyService,
-  ) {}
+    private readonly dataService: DataService,
+  ) { }
 
   @Get('chain')
   findAllDoctos(@Query() dto: GetDTO) {
@@ -80,5 +82,10 @@ export class DataController {
   @Get('pharmacy/filter/all')
   findPatient(@Query() dto: GetDTO) {
     return this.pharmacyService.findPharmacy(dto);
+  }
+
+  @Get('default/countries')
+  findCountries() {
+    return this.dataService.findCountries();
   }
 }

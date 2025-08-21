@@ -8,6 +8,7 @@ export class GetDTO {
   perPage?: string;
   page?: string;
 
+  country?: number | null;
   gender?: number | null;
   department?: number | null;
   city?: number | null;

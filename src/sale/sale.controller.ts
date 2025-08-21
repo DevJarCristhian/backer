@@ -18,6 +18,7 @@ import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { UserActiveI } from 'src/common/interfaces/user-active.interface';
 import { UpdateOpportunityDto } from './dto/opportunity/update-opportunity.dto';
 import { PricesService } from './services/prices.service';
+import { UpdatePriceDto } from './dto/prices/update-prices.dto';
 
 @UseGuards(AuthGuard)
 @Controller('sale')
@@ -26,7 +27,7 @@ export class SaleController {
     private readonly productService: ProductService,
     private readonly opportunityService: OpportunityService,
     private readonly pricesService: PricesService,
-  ) {}
+  ) { }
 
   @Get('price')
   findAllPrices(@Query() dto: GetDTO) {
@@ -99,5 +100,14 @@ export class SaleController {
     @Body() dto: UpdateOpportunityDto,
   ) {
     return this.opportunityService.updateOpportunity(+user.id, +id, dto);
+  }
+
+  @Put('price/:id')
+  updatePatient(
+    @ActiveUser() user: UserActiveI,
+    @Param('id') id: string,
+    @Body() dto: UpdatePriceDto,
+  ) {
+    return this.pricesService.updatePrice(+user.id, +id, dto);
   }
 }

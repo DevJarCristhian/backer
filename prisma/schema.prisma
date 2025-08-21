@@ -9,11 +9,12 @@ datasource db {
 }
 
 model users {
-  id       Int     @id @default(autoincrement())
-  name     String
-  email    String  @unique
-  password String
-  status   Boolean
+  id        Int     @id @default(autoincrement())
+  name      String
+  email     String  @unique
+  password  String
+  status    Boolean
+  countryId BigInt?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
@@ -194,6 +195,15 @@ model notify {
 }
 
 //Mapping Tables
+model country {
+  id          BigInt        @id @map("id")
+  name        String        @map("nombre")
+  code        String        @map("codigo_area")
+  opportunity opportunity[]
+
+  @@map("paises")
+}
+
 model product {
   id              BigInt        @id @map("id")
   name            String        @map("nombre")
@@ -284,6 +294,9 @@ model opportunity {
 
   patientId BigInt?  @map("id_paciente")
   patient   patient? @relation(fields: [patientId], references: [id])
+
+  countryId BigInt?  @map("id_pais")
+  country   country? @relation(fields: [countryId], references: [id])
 
   pharmacyId BigInt?   @map("id_farmacia")
   pharmacy   pharmacy? @relation(fields: [pharmacyId], references: [id])

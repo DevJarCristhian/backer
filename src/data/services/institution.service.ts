@@ -6,10 +6,12 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class InstitutionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
     const { search, perPage, page } = dto;
+
+    // let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
               AND (
@@ -17,6 +19,10 @@ export class InstitutionService {
               )
             `
       : Prisma.sql``;
+
+    // if (country && country != 0) {
+    //   filterQuery = Prisma.sql`${filterQuery} AND id_pais = ${country}`;
+    // }
 
     const query = Prisma.sql`
           SELECT

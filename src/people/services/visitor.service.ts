@@ -6,10 +6,12 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class VisitorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
-    const { search, perPage, page } = dto;
+    const { search, perPage, page, country } = dto;
+
+    let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -17,6 +19,10 @@ export class VisitorService {
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND v.id_pais = ${country}`;
+    }
 
     const query = Prisma.sql`
         SELECT
@@ -28,7 +34,7 @@ export class VisitorService {
         FROM
         visitadores AS v
         LEFT JOIN paises AS p ON v.id_pais = p.id 
-        WHERE 1=1 ${searchQuery}
+        WHERE 1=1 ${searchQuery} ${filterQuery}
         ORDER BY v.id DESC
         LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
       `;
@@ -38,7 +44,7 @@ export class VisitorService {
     const totalQuery = Prisma.sql`SELECT COUNT(*) AS total
     FROM visitadores AS v
     LEFT JOIN paises AS p ON v.id_pais = p.id
-    WHERE 1=1 ${searchQuery}`;
+    WHERE 1=1 ${searchQuery} ${filterQuery}`;
 
     const totalResult = await this.prisma.$queryRaw(totalQuery);
 
@@ -53,7 +59,9 @@ export class VisitorService {
   }
 
   async getAllVisitors(dto: GetDTO) {
-    const { search } = dto;
+    const { search, country } = dto;
+
+    let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -61,6 +69,10 @@ export class VisitorService {
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND v.id_pais = ${country}`;
+    }
 
     const query = Prisma.sql`
         SELECT
@@ -70,7 +82,7 @@ export class VisitorService {
         FROM
         visitadores AS v
         LEFT JOIN paises AS p ON v.id_pais = p.id
-        WHERE 1=1 ${searchQuery}`;
+        WHERE 1=1 ${searchQuery} ${filterQuery}`;
 
     const data = await this.prisma.$queryRaw(query);
     return data;

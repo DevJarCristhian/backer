@@ -6,10 +6,12 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class ChainService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
-    const { search } = dto;
+    const { search, perPage, page, country } = dto;
+
+    let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -17,6 +19,10 @@ export class ChainService {
             )
           `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND c.id_pais = ${country}`;
+    }
 
     const query = Prisma.sql`
         SELECT
@@ -26,8 +32,9 @@ export class ChainService {
         FROM
         cadena AS c
         LEFT JOIN paises AS p ON c.id_pais = p.id
-        WHERE 1=1 ${searchQuery}
+        WHERE 1=1 ${searchQuery} ${filterQuery}
         ORDER BY c.cadena ASC
+        LIMIT ${parseInt(perPage)} OFFSET ${(parseInt(page) - 1) * parseInt(perPage)};
       `;
 
     const serializedData = await this.prisma.$queryRaw(query);
@@ -37,8 +44,18 @@ export class ChainService {
       ),
     );
 
-    const total = data.length;
-    const last_page = Math.ceil(total / 50);
+    const totalQuery = Prisma.sql`
+        SELECT
+          COUNT(*) AS total
+        FROM
+        cadena AS c
+        LEFT JOIN paises AS p ON c.id_pais = p.id
+        WHERE 1=1 ${searchQuery} ${filterQuery}
+      `;
+
+    const totalResult = await this.prisma.$queryRaw(totalQuery);
+    const total = Number(totalResult[0].total);
+    const last_page = Math.ceil(total / parseInt(perPage));
 
     return {
       data,
@@ -48,7 +65,9 @@ export class ChainService {
   }
 
   async getAllChains(dto: GetDTO) {
-    const { search } = dto;
+    const { search, country } = dto;
+
+    let filterQuery = Prisma.sql``;
     const searchQuery = search
       ? Prisma.sql`
             AND (
@@ -57,6 +76,10 @@ export class ChainService {
           `
       : Prisma.sql``;
 
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND c.id_pais = ${country}`;
+    }
+
     const query = Prisma.sql`
         SELECT
           c.cadena,
@@ -64,7 +87,7 @@ export class ChainService {
         FROM
         cadena AS c
         LEFT JOIN paises AS p ON c.id_pais = p.id
-        WHERE 1=1 ${searchQuery}
+        WHERE 1=1 ${searchQuery} ${filterQuery}
         ORDER BY c.cadena ASC`;
 
     const data = await this.prisma.$queryRaw(query);

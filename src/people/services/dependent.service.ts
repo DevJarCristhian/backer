@@ -6,13 +6,14 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class DependentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(dto: GetDTO) {
     const {
       search,
       perPage,
       page,
+      country,
       gender,
       department,
       birthDate,
@@ -26,11 +27,14 @@ export class DependentService {
           AND (
             d.nombre LIKE ${`%${search}%`} OR 
             d.apellido LIKE ${`%${search}%`} OR 
-            d.numero_documento LIKE ${`%${search}%`} OR
-            dept.nombre LIKE ${`%${search}%`}
+            d.numero_documento LIKE ${`%${search}%`}
           )
         `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.pais = ${country}`;
+    }
 
     if (gender) {
       filterQuery = Prisma.sql`${filterQuery} AND d.sexo = ${gender}`;
@@ -97,7 +101,7 @@ export class DependentService {
   }
 
   async getAllDependents(dto: GetDTO) {
-    const { search, gender, department, birthDate, startDate, endDate } = dto;
+    const { search, country, gender, department, birthDate, startDate, endDate } = dto;
 
     let filterQuery = Prisma.sql``;
     const searchQuery = search
@@ -105,11 +109,14 @@ export class DependentService {
           AND (
             d.nombre LIKE ${`%${search}%`} OR 
             d.apellido LIKE ${`%${search}%`} OR 
-            d.numero_documento LIKE ${`%${search}%`} OR
-            dept.nombre LIKE ${`%${search}%`}
+            d.numero_documento LIKE ${`%${search}%`}
           )
         `
       : Prisma.sql``;
+
+    if (country && country != 0) {
+      filterQuery = Prisma.sql`${filterQuery} AND d.pais = ${country}`;
+    }
 
     if (gender) {
       filterQuery = Prisma.sql`${filterQuery} AND d.sexo = ${gender}`;
