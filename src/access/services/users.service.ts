@@ -14,7 +14,7 @@ export class UsersService {
   async findAll(dto: GetDTO) {
     const { search } = dto;
 
-    const data = await this.prisma.users.findMany({
+    const query = await this.prisma.users.findMany({
       select: {
         id: true,
         name: true,
@@ -30,6 +30,7 @@ export class UsersService {
             id: true,
           },
         },
+        countryId: true
       },
       where: search
         ? {
@@ -48,6 +49,12 @@ export class UsersService {
         }
         : {},
     });
+
+    const data = JSON.parse(
+      JSON.stringify(query, (key, value) =>
+        typeof value === 'bigint' ? Number(value) : value,
+      ),
+    );
 
     return data;
   }
@@ -105,7 +112,7 @@ export class UsersService {
         name: true,
         email: true,
         password: true,
-        roleId: true,
+        roleId: true
       },
     });
   }
@@ -139,6 +146,7 @@ export class UsersService {
       id: user.id,
       name: user.name,
       email: user.email,
+      countryId: Number(user.countryId ?? 0),
       role: user.role.description,
       permissions: user.role.rolePermissions.map((rp) => ({
         id: rp.permission.id,

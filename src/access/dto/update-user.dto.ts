@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEmail,
   IsNumber,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
@@ -18,6 +19,10 @@ export class UpdateUserDto {
 
   @IsNumber()
   roleId: number;
+
+  @IsNumber()
+  @IsOptional()
+  countryId?: number | null;
 
   @IsBoolean()
   status: boolean;

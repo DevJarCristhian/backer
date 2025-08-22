@@ -410,7 +410,7 @@ export class PatientService {
     }
 
     if (incriptionDate) {
-      filterQuery = Prisma.sql`${filterQuery} AND fecha_inscripcion = ${birthDate}`;
+      filterQuery = Prisma.sql`${filterQuery} AND fecha_inscripcion = ${incriptionDate}`;
     }
 
     if (startDate && endDate) {

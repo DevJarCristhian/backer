@@ -51,8 +51,8 @@ export class OpportunityService {
             patient: {
               is: {
                 OR: [
-                  { documentNumber: { contains: search } },
-                  { firstName: { contains: search } }
+                  { documentNumber: { contains: search } }
+                  // { firstName: { contains: search } }
                   // { lastName: { contains: search } }
                 ],
               },
