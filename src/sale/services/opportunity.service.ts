@@ -45,20 +45,7 @@ export class OpportunityService {
           }
           : {}),
       ...(search && {
-        OR: [
-          { invoiceNumber: { contains: search } },
-          {
-            patient: {
-              is: {
-                OR: [
-                  { documentNumber: { contains: search } }
-                  // { firstName: { contains: search } }
-                  // { lastName: { contains: search } }
-                ],
-              },
-            },
-          },
-        ],
+        invoiceNumber: { contains: search },
       }),
     };
 

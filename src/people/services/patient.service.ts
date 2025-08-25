@@ -491,7 +491,7 @@ export class PatientService {
     const serializedData = await this.prisma.$queryRaw(query);
     const data = JSON.parse(
       JSON.stringify(serializedData, (key, value) =>
-        typeof value === 'bigint' ? value.toString() : value,
+        typeof value === 'bigint' ? Number(value) : value,
       ),
     );
 
