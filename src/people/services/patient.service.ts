@@ -488,12 +488,25 @@ export class PatientService {
       GROUP BY mcab.id, mcab.descripcion
     `;
 
-    const serializedData = await this.prisma.$queryRaw(query);
-    const data = JSON.parse(
-      JSON.stringify(serializedData, (key, value) =>
-        typeof value === 'bigint' ? Number(value) : value,
-      ),
-    );
+    type Row = {
+      id: number | bigint;
+      descripcion: string;
+      detalles: string | any[] | null;
+    };
+
+    const serializedData = await this.prisma.$queryRaw<Row[]>(query);
+
+    const data = serializedData.map((row) => ({
+      id: typeof row.id === 'bigint' ? Number(row.id) : row.id,
+      descripcion: row.descripcion,
+      detalles:
+        row.detalles == null
+          ? []
+          : typeof row.detalles === 'string'
+            ? JSON.parse(row.detalles)
+            : row.detalles,
+    }));
+
 
     return data;
   }
